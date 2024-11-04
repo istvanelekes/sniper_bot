@@ -16,14 +16,31 @@ async function main() {
     
     // Check if there are pools
     if (latestPools.data.results.length === 0) {
-      console.log('No new pools found');
-      return;
-  }
+        console.log('No new pools found');
+        return;
+    }
 
-  // Create an array of promises for fetching security info of each pool 
-  const securityPromises = latestPools.data.results.map(pool => 
-      fetchSecurityInfo(pool.mainToken.address)
-  );
+    // Create an array of promises for fetching security info of each pool 
+    const securityPromises = latestPools.data.results.map(pool => 
+        fetchSecurityInfo(pool.mainToken.address)
+    );
+
+    // Wait for all promises to resolve
+    const securityDataArray = await Promise.all(securityPromises);
+
+    // Check security for all tokens from latest pool
+    securityDataArray.forEach((securityData, index) => {
+        const pool = latestPools.data.results[index];
+        const tokenAddress = pool.mainToken.address;
+
+        if (securityData.result && securityData.result[tokenAddress]) {
+            const tokenIsSecure = checkSecurity(securityData.result[tokenAddress], tokenAddress);
+
+            if (tokenIsSecure) {
+              
+            }
+        }
+    });
 }
 
 // Fetch latest pool data from DexScreener
@@ -69,3 +86,15 @@ async function fetchSecurityInfo(_tokenAddress) {
     }
 }
 
+// Check security info from GoPlus
+async function checkSecurity(_securityInfo, _tokenAddress) {
+  if (_securityInfo['is_open_source'] === false ||
+    _securityInfo['is_honeypot'] === true ||
+    _securityInfo['is_in_dex'] === false ||
+    _securityInfo['cannot_buy'] === true
+  ) {
+      return false;
+  }
+
+  return true;
+}
