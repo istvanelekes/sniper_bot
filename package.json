@@ -1,0 +1,23 @@
+{
+  "name": "sniper_bot",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "start": "node bot.js"
+  },
+  "dependencies": {
+    "@goplus/sdk-node": "^1.0.12",
+    "axios": "^1.7.7",
+    "big.js": "^6.2.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "moment": "^2.30.1"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "5.0.0",
+    "@openzeppelin/contracts": "4.9.1",
+    "@uniswap/v3-periphery": "1.4.4",
+    "hardhat": "2.22.12"
+  }
+}
