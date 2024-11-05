@@ -2,6 +2,12 @@ require("dotenv").config()
 const GoPlus = require('@goplus/sdk-node');
 const axios = require('axios');
 const moment = require('moment')
+const ethers = require("ethers")
+
+const { provider, uniswap, sniperTrade } = require('./helpers/initialization')
+
+// -- CONFIGURATION VALUES HERE -- //
+const POOL_FEE = config.TOKENS.POOL_FEE
 
 async function main() {
     console.log('starting...', moment.utc().toISOString())
@@ -31,13 +37,16 @@ async function main() {
     // Check security for all tokens from latest pool
     securityDataArray.forEach((securityData, index) => {
         const pool = latestPools.data.results[index];
-        const tokenAddress = pool.mainToken.address;
+        const mainTokenAddress = pool.mainToken.address;
+        const sideTokenAddress = pool.sideToken.address;
+        const amount = 1;
 
         if (securityData.result && securityData.result[tokenAddress]) {
-            const tokenIsSecure = checkSecurity(securityData.result[tokenAddress], tokenAddress);
+            const mainTokenIsSecure = checkSecurity(securityData.result[mainTokenAddress], mainTokenAddress);
+            const sideTokenIsSecure = checkSecurity(securityData.result[sideTokenAddress], sideTokenAddress);
 
-            if (tokenIsSecure) {
-              
+            if (mainTokenIsSecure && sideTokenIsSecure) {
+                executeTrade(mainTokenAddress, sideTokenAddress, amount, pool.fee)
             }
         }
     });
@@ -97,4 +106,27 @@ async function checkSecurity(_securityInfo, _tokenAddress) {
   }
 
   return true;
+}
+
+async function executeTrade(_token0Address, _token1Address, _amount, _fee) {
+  console.log(`Buy newly listed token...\n`)
+
+  const routerPath = await uniswap.router.getAddress()
+
+  // Create Signer
+  const account = new ethers.Wallet(process.env.PRIVATE_KEY, provider)
+
+  if (config.PROJECT_SETTINGS.isDeployed) {
+    const transaction = await sniperTrade.connect(account).buyToken(
+      routerPath,
+      _token0Address,
+      _amount,
+      _token1Address,
+      _fee
+    )
+
+    const receipt = await transaction.wait(0)
+  }
+
+  console.log(`Trade Complete:\n`)
 }
