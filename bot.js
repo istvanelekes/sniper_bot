@@ -1,98 +1,60 @@
 require("dotenv").config()
-const GoPlus = require('@goplus/sdk-node');
+
+const { GoPlus, ErrorCode } = require('@goplus/sdk-node');
 const axios = require('axios');
-const moment = require('moment')
-const ethers = require("ethers")
+const ethers = require("ethers");
 
 const { provider, uniswap, sniperTrade } = require('./helpers/initialization')
+const config = require('./config.json')
 
-// -- CONFIGURATION VALUES HERE -- //
-const POOL_FEE = config.TOKENS.POOL_FEE
+let isExecuting = false
 
-async function main() {
-    console.log('starting...', moment.utc().toISOString())
+const main = async () => {
 
-    const from = moment.utc().subtract(1, 'seconds').toISOString();
-    const to = moment.utc().toISOString();
+  await loadAllPools(provider, uniswap.factory)
 
-    const latestPools = await fetchLatestPools(
-        encodeURIComponent(from),
-        encodeURIComponent(to)
-    )
-    
-    // Check if there are pools
-    if (latestPools.data.results.length === 0) {
-        console.log('No new pools found');
-        return;
-    }
+  uniswap.factory.on('PoolCreated', (token0, token1, fee, tickSpacing, pool) => newPoolHandler(token0, token1, fee, tickSpacing, pool))
 
-    // Create an array of promises for fetching security info of each pool 
-    const securityPromises = latestPools.data.results.map(pool => 
-        fetchSecurityInfo(pool.mainToken.address)
-    );
-
-    // Wait for all promises to resolve
-    const securityDataArray = await Promise.all(securityPromises);
-
-    // Check security for all tokens from latest pool
-    securityDataArray.forEach((securityData, index) => {
-        const pool = latestPools.data.results[index];
-        const mainTokenAddress = pool.mainToken.address;
-        const sideTokenAddress = pool.sideToken.address;
-        const amount = 1;
-
-        if (securityData.result && securityData.result[tokenAddress]) {
-            const mainTokenIsSecure = checkSecurity(securityData.result[mainTokenAddress], mainTokenAddress);
-            const sideTokenIsSecure = checkSecurity(securityData.result[sideTokenAddress], sideTokenAddress);
-
-            if (mainTokenIsSecure && sideTokenIsSecure) {
-                executeTrade(mainTokenAddress, sideTokenAddress, amount, pool.fee)
-            }
-        }
-    });
+  console.log("Waiting for new pools...\n")
 }
 
-// Fetch latest pool data from DexScreener
-async function fetchLatestPools(_from, _to) {
-    const chain = 'ether';
-    const url = `https://public-api.dextools.io/trial/v2/pool/${chain}`;
+const newPoolHandler = async (token0, token1, fee, tickSpacing, pool) => {
+    if (!isExecuting) {
+        isExecuting = true
 
-    // Define the query parameters
-    const params = {
-        sort: 'creationTime',
-        order: 'asc',
-        from: _from,
-        to: _to
-    };
-    
-    axios.get(url, { params })
-      .then(response => {
-        console.log('Pool Information:', response.data);
-        return response;
-      })
-      .catch(error => {
-        console.error('Error fetching pool information:', error);
-      });
+        console.log(`Pool created with ${token0} & ${token1} at ${pool}`)
+
+        console.log("Fetch Security info...\n")
+        const securityData = await fetchSecurityInfo(token0)
+        const tokenKey = token0.toLowerCase()
+
+        if (securityData.result && securityData.result[tokenKey]) {
+          console.log("Check Security info...\n")
+          const tokenIsSecure = checkSecurity(securityData.result[tokenKey], token0)
+
+          if (tokenIsSecure) {
+              const amount = 10
+              const receipt = await executeTrade(token0, token1, amount, fee)
+          }
+        }
+
+        isExecuting = false
+
+        console.log("Waiting for new pools...\n")
+    }
 }
 
 // Fetch security info from GoPlus
-async function fetchSecurityInfo(_tokenAddress) {
+const fetchSecurityInfo = async (_tokenAddress) => {
   let chainId = "1";
-
-  try {
-      const response = await GoPlus.tokenSecurity({
-        address: _tokenAddress,
-        chain_id: chainId,
-      });
   
-      if (response.code === 0) {
-        return response
-      } else {
-        console.error('Error:', response.message);
-      }
-    } catch (error) {
-      console.error('Error fetching token security information:', error);
-    }
+  // It will only return 1 result for the 1st token address if not called getAccessToken before
+  let res = await GoPlus.tokenSecurity(chainId, [_tokenAddress], 30);
+  if (res.code != ErrorCode.SUCCESS) {
+    console.error(res.message);
+  } else {
+    return res
+  } 
 }
 
 // Check security info from GoPlus
@@ -130,3 +92,52 @@ async function executeTrade(_token0Address, _token1Address, _amount, _fee) {
 
   console.log(`Trade Complete:\n`)
 }
+
+const loadAllPools = async (provider, uniswap) => {
+
+  let block = await provider.getBlockNumber()
+
+  while (block > 0) {
+  
+    const poolStream = await uniswap.queryFilter('PoolCreated', block - 100, block)  
+
+    if (poolStream.length > 0) {
+      const pools = poolStream.map(event => {
+        return { hash: event.transactionHash, args: event.args }
+      })
+
+      pools.forEach(element => {
+        newPoolHandler.apply(this, element.args)
+      });
+    }
+
+    block -= 100
+  }
+}
+
+// Fetch latest pool data from DexScreener
+/*
+async function fetchLatestPools(_from, _to) {
+  const chain = 'ether';
+  const url = `https://public-api.dextools.io/trial/v2/pool/${chain}`;
+
+  // Define the query parameters
+  const params = {
+      sort: 'creationTime',
+      order: 'asc',
+      from: _from,
+      to: _to
+  };
+  
+  axios.get(url, { params })
+    .then(response => {
+      console.log('Pool Information:', response.data);
+      return response;
+    })
+    .catch(error => {
+      console.error('Error fetching pool information:', error);
+    });
+}
+    */
+
+main()

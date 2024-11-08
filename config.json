@@ -1,7 +1,8 @@
 {
     "PROJECT_SETTINGS": {
+        "isLocal": true,
         "isDeployed": false,
-        "SNIPER_TRADE_ADDRESS": "",
+        "SNIPER_TRADE_ADDRESS": "0x3533e5ac68CeE7F2B579f662D3A9610C3E29B6E2",
         "PRICE_UNITS": 0,
         "GAS_LIMIT": 600000,
         "GAS_PRICE": 0.00000001
