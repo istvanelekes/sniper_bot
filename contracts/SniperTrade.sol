@@ -19,7 +19,7 @@ contract SniperTrade {
         address tokenOut,
         uint24 fee
     ) external {
-        require(msg.sender == owner);
+        require(msg.sender == owner, 'Only the owner can buy');
 
         trades[tokenIn][tokenOut] = amount;
 

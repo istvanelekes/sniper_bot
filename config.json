@@ -1,11 +1,16 @@
 {
     "PROJECT_SETTINGS": {
         "isLocal": true,
-        "isDeployed": false,
-        "SNIPER_TRADE_ADDRESS": "0x3533e5ac68CeE7F2B579f662D3A9610C3E29B6E2",
+        "isDeployed": true,
+        "SNIPER_TRADE_ADDRESS": "0xA899118f4BCCb62F8c6A37887a4F450D8a4E92E0",
         "PRICE_UNITS": 0,
         "GAS_LIMIT": 600000,
         "GAS_PRICE": 0.00000001
+    },
+    "FUNDINGS": {
+        "WETH": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "USDT": "0xf5d791eEbfc229c4fe976E8328ed2c261690cb34",
+        "SHIB": "0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE"
     },
     "UNISWAP": {
         "QUOTER_V3": "0x61fFE014bA17989E743c5F6cB21bF9697530B21e",

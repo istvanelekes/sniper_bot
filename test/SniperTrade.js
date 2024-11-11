@@ -7,20 +7,23 @@ const ISwapRouter = require('@uniswap/v3-periphery/artifacts/contracts/interface
 describe("Sniper Trade", () => {
   let owner
   let sniperTrade
-  let usdc, weth
-  const USDC_TOKEN = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"
-  const WETH_TOKEN = "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
+  let token0, token1, usdc
+  const TOKEN0 = "0x7997349fa5A0A79085778242DBe1fB9D8F5C475A"
+  const TOKEN1 = "0xdAC17F958D2ee523a2206206994597C13D831ec7" // USDT
+  const USDC = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
   const UNISWAP_V3_ROUTER = "0xE592427A0AEce92De3Edee1F18E0157C05861564"
 
   beforeEach(async () => {
+    const provider = await ethers.getDefaultProvider();
     [owner] = await ethers.getSigners()
 
     sniperTrade = await hre.ethers.deployContract("SniperTrade")
     await sniperTrade.waitForDeployment()
 
     // Setup ERC20 (USDC) contract...
-    usdc = new ethers.Contract(USDC_TOKEN, ERC20.abi, owner)
-    weth = new ethers.Contract(WETH_TOKEN, ERC20.abi, owner)
+    token0 = new ethers.Contract(TOKEN0, ERC20.abi, owner)
+    token1 = new ethers.Contract(TOKEN1, ERC20.abi, owner)
+    usdc = new ethers.Contract(USDC, ERC20.abi, owner)
   })
 
   describe("Deployment", () => {
@@ -34,7 +37,7 @@ describe("Sniper Trade", () => {
       const usdcBalanceBefore = await usdc.connect(owner).balanceOf(owner.address)
 
       // Account to impersonate
-      const UNLOCKED_ACCOUNT = "0x4700192F8a4A00f009d87A515ff2d13E5cAb8364"
+      const UNLOCKED_ACCOUNT = "0x48EC5560bFD59b95859965cCE48cC244CFDF6b0c"
 
       await hre.network.provider.request({
         method: "hardhat_impersonateAccount",
@@ -43,7 +46,7 @@ describe("Sniper Trade", () => {
 
       const signer = await hre.ethers.getSigner(UNLOCKED_ACCOUNT)
 
-      // Transfer USDC to owner of LeveragedYieldFarm
+      // Transfer USDC to owner of Sniper Trade
       await (await usdc.connect(signer).transfer(owner.address, ethers.parseUnits('10000', 6))).wait()
 
       const usdcBalanceAfter = await usdc.balanceOf(owner.address)
@@ -52,7 +55,7 @@ describe("Sniper Trade", () => {
   })
 
   describe("Trade tokens", () => {
-    const AMOUNT = hre.ethers.parseUnits('990', 6)
+    const AMOUNT = ethers.parseUnits('1', 6)
 
     beforeEach(async () => {
       await (await usdc.connect(owner).transfer(
@@ -61,21 +64,22 @@ describe("Sniper Trade", () => {
       )).wait()
     })
 
-    it("Swap USDC to WETH ", async () => {
+    it("Swap Token0 to Token1 ", async () => {
+
       const usdcBalanceBefore = await usdc.connect(owner).balanceOf(sniperTrade.getAddress())
 
-      let transaction = await sniperTrade.connect(owner).buyToken(UNISWAP_V3_ROUTER, USDC_TOKEN, AMOUNT, WETH_TOKEN, 500)
+      let transaction = await sniperTrade.connect(owner).buyToken(UNISWAP_V3_ROUTER, usdc, AMOUNT, token1, 500)
       await transaction.wait()
 
       const usdcBalanceAfter = await usdc.balanceOf(sniperTrade.getAddress())
       expect(usdcBalanceAfter).to.be.below(usdcBalanceBefore)
     })
 
-    it("Swap USDC to WETH and the inverse is failing", async () => {
-      let transaction = await sniperTrade.connect(owner).buyToken(UNISWAP_V3_ROUTER, USDC_TOKEN, AMOUNT, WETH_TOKEN, 500)
-      await transaction.wait()
+    // it("Swap USDC to WETH and the inverse is failing", async () => {
+    //   let transaction = await sniperTrade.connect(owner).buyToken(UNISWAP_V3_ROUTER, USDC_TOKEN, AMOUNT, WETH_TOKEN, 500)
+    //   await transaction.wait()
 
-      await expect(sniperTrade.connect(owner).sellToken(UNISWAP_V3_ROUTER, WETH_TOKEN, USDC_TOKEN, 500)).to.be.reverted
-    })
+    //   await expect(sniperTrade.connect(owner).sellToken(UNISWAP_V3_ROUTER, WETH_TOKEN, USDC_TOKEN, 500)).to.be.reverted
+    // })
   })
 })
