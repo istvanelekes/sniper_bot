@@ -3,7 +3,6 @@ require("dotenv").config()
 const { GoPlus, ErrorCode } = require('@goplus/sdk-node');
 const axios = require('axios');
 const ethers = require("ethers");
-const ERC20 = require('@openzeppelin/contracts/build/contracts/ERC20.json')
 
 const { provider, uniswap, sniperTrade } = require('./helpers/initialization')
 const config = require('./config.json')
@@ -12,7 +11,8 @@ let isExecuting = false
 
 const main = async () => {
 
-  await loadAllPools(provider, uniswap.factory)
+  // this function is for testing purposes, by going backward on the blockchain
+  await loadAllPools(uniswap.factory)
 
   uniswap.factory.on('PoolCreated', (token0, token1, fee, tickSpacing, pool) => newPoolHandler(token0, token1, fee, tickSpacing, pool))
 
@@ -25,18 +25,32 @@ const newPoolHandler = async (token0, token1, fee, tickSpacing, pool) => {
 
         console.log(`Pool created with ${token0} & ${token1} at ${pool}`)
 
+        const funds = Object.values(config.FUNDINGS)
+
+        let tokenIn, tokenOut
+        if (funds.includes(token0)) {
+          tokenIn = token0
+          tokenOut = token1
+        } else if (funds.includes(token1)) {
+          tokenIn = token1
+          tokenOut = token0
+        } else {
+          isExecuting = false
+          return
+        }
+
         console.log("Fetch Security info...\n")
-        const securityData = await fetchSecurityInfo(token0)
-        const tokenKey = token0.toLowerCase()
+        const securityData = await fetchSecurityInfo(tokenOut)
+        const tokenKey = tokenOut.toLowerCase()
 
         if (securityData.result && securityData.result[tokenKey]) {
           console.log("Check Security info...\n")
-          const tokenIsSecure = checkSecurity(securityData.result[tokenKey], token0)
+          const tokenIsSecure = checkSecurity(securityData.result[tokenKey], tokenOut)
 
           if (tokenIsSecure) {
               const amount = ethers.parseUnits('10', 6)
               try {
-                await executeTrade(token1, token0, amount, fee)
+                await executeTrade(tokenIn, tokenOut, amount, fee)
               } catch (error) {
                 console.error(error)
               }
@@ -107,7 +121,8 @@ async function executeTrade(_tokenIn, _tokenOut, _amount, _fee) {
   }
 }
 
-const loadAllPools = async (provider, uniswap) => {
+/// this function is for testing purposes, by going backward on the blockchain
+const loadAllPools = async (uniswap) => {
 
   let block = await provider.getBlockNumber()
 
