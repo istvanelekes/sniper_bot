@@ -7,59 +7,101 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract SniperTrade {
     address public owner;
     mapping(address => mapping(address => uint256)) private trades;
+    mapping(address => uint256) private prices;
+
+    modifier onlyOwner() {
+        require(
+            msg.sender == owner,
+            "SniperTrade: caller is not the owner!"
+        );
+        _;
+    }
 
     constructor() {
         owner = msg.sender;
     }
 
-    function buyToken(
-        address router,
-        address tokenIn,
-        uint256 amount,
-        address tokenOut,
-        uint24 fee
-    ) external {
-        require(msg.sender == owner, 'Only the owner can buy');
+    /// @notice Don't allow contract to receive Ether by mistake
+    fallback() external {
+        revert();
+    }
 
-        trades[tokenIn][tokenOut] = amount;
+    /**
+     * Buy a token on Uniswap or compatible Dex's
+     * @param _router Router address to Uniswap compatible Dex's
+     * @param _tokenIn Token address to sell
+     * @param _amount Token amount to sell
+     * @param _tokenOut Token address to buy
+     * @param _fee swap fee
+     */
+    function buyToken(
+        address _router,
+        address _tokenIn,
+        uint256 _amount,
+        address _tokenOut,
+        uint24 _fee
+    ) external onlyOwner {
+        trades[_tokenIn][_tokenOut] = _amount;
 
         // Swap the amount of token0 and expect to get X amount of token1
         _swapOnV3(
-            router,
-            tokenIn,
-            amount,
-            tokenOut,
+            _router,
+            _tokenIn,
+            _amount,
+            _tokenOut,
             0,
-            fee
+            _fee
         );
     }
 
+    /**
+     * Sell a token on Uniswap or compatible Dex's
+     * @param _router Router address to Uniswap compatible Dex's
+     * @param _tokenIn Token address to sell
+     * @param _tokenOut Token address to buy
+     * @param _fee swap fee
+     */
     function sellToken(
-        address router,
-        address tokenIn,
-        address tokenOut,
-        uint24 fee
-    ) external {
-        require(msg.sender == owner);
-
-        uint256 amountIn = IERC20(tokenIn).balanceOf(address(this));
-        uint256 amountOut = trades[tokenOut][tokenIn];
+        address _router,
+        address _tokenIn,
+        address _tokenOut,
+        uint24 _fee
+    ) external onlyOwner {
+        uint256 amountIn = IERC20(_tokenIn).balanceOf(address(this));
+        uint256 amountOut = trades[_tokenOut][_tokenIn];
 
         // Swap the amount of token0 and expect to get X amount of token1
         _swapOnV3(
-            router,
-            tokenIn,
+            _router,
+            _tokenIn,
             amountIn,
-            tokenOut,
+            _tokenOut,
             amountOut,
-            fee
+            _fee
         );
 
         // Transfer any excess tokens [i.e. profits] to owner
-        uint256 tokenBalance = IERC20(tokenOut).balanceOf(address(this));
+        uint256 tokenBalance = IERC20(_tokenOut).balanceOf(address(this));
         if (tokenBalance > amountOut) {
-            IERC20(tokenOut).transfer(owner, tokenBalance - amountOut);
+            IERC20(_tokenOut).transfer(owner, tokenBalance - amountOut);
         }
+    }
+
+    /**
+     * Withdraw any tokens accidentally sent or extra balance remaining.
+     * @param _tokenAddress Token address to withdraw.
+     */
+    function withdrawToken(address _tokenAddress) public onlyOwner {
+        uint256 balance = IERC20(_tokenAddress).balanceOf(address(this));
+        IERC20(_tokenAddress).transfer(owner, balance);
+    }
+
+    /// Withdraw Ether from the contract
+    function withdraw() public onlyOwner {
+        uint256 balance = address(this).balance;
+
+        (bool succes, ) = payable(msg.sender).call{ value: balance }("");
+        require(succes, "Failed to send Ether");
     }
 
     // -- INTERNAL FUNCTIONS -- //
