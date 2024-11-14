@@ -5,7 +5,7 @@ const ERC20 = require('@openzeppelin/contracts/build/contracts/ERC20.json')
 const ISwapRouter = require('@uniswap/v3-periphery/artifacts/contracts/interfaces/ISwapRouter.sol/ISwapRouter.json')
 
 describe("Sniper Trade", () => {
-  let owner
+  let owner, account
   let sniperTrade
   let token0, token1, usdc
   const TOKEN0 = "0x7997349fa5A0A79085778242DBe1fB9D8F5C475A"
@@ -15,7 +15,9 @@ describe("Sniper Trade", () => {
 
   beforeEach(async () => {
     const provider = await ethers.getDefaultProvider();
-    [owner] = await ethers.getSigners()
+    const accounts = await ethers.getSigners()
+    owner = accounts[0]
+    account = accounts[1]
 
     sniperTrade = await hre.ethers.deployContract("SniperTrade")
     await sniperTrade.waitForDeployment()
@@ -81,5 +83,43 @@ describe("Sniper Trade", () => {
 
     //   await expect(sniperTrade.connect(owner).sellToken(UNISWAP_V3_ROUTER, WETH_TOKEN, USDC_TOKEN, 500)).to.be.reverted
     // })
+  })
+
+  describe("Withdraw tokens", () => {
+    describe('Success', () => {
+
+      beforeEach(async () => {
+        await (await usdc.connect(owner).transfer(
+          await sniperTrade.getAddress(),
+          ethers.parseUnits('1000', 6)
+        )).wait()
+      })
+      
+      it("withdraw USDC ", async () => {
+        const usdcBalanceBefore = await usdc.connect(owner).balanceOf(sniperTrade.getAddress())
+
+        let transaction = await sniperTrade.connect(owner).withdrawToken(usdc)
+        await transaction.wait()
+
+        const usdcBalanceAfter = await usdc.balanceOf(sniperTrade.getAddress())
+        expect(usdcBalanceAfter).to.be.below(usdcBalanceBefore)
+      })
+
+      it("withdraw ETH ", async () => {
+        const balanceBefore = await ethers.provider.getBalance(owner.address)
+
+        let transaction = await sniperTrade.connect(owner).withdraw()
+        await transaction.wait()
+
+        const balanceAfter = await ethers.provider.getBalance(owner.address)
+        expect(balanceAfter).to.be.below(balanceBefore)
+      })
+    })
+
+    describe('Failure', () => {
+      it('prevents non-owner from withdrawing', async () => {
+        await expect(sniperTrade.connect(account).withdraw()).to.be.reverted
+      })
+    })
   })
 })
