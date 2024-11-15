@@ -7,10 +7,10 @@ const ISwapRouter = require('@uniswap/v3-periphery/artifacts/contracts/interface
 describe("Sniper Trade", () => {
   let owner, account
   let sniperTrade
-  let token0, token1, usdc
+  let token0, token1, weth
   const TOKEN0 = "0x7997349fa5A0A79085778242DBe1fB9D8F5C475A"
   const TOKEN1 = "0xdAC17F958D2ee523a2206206994597C13D831ec7" // USDT
-  const USDC = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+  const WETH = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
   const UNISWAP_V3_ROUTER = "0xE592427A0AEce92De3Edee1F18E0157C05861564"
 
   beforeEach(async () => {
@@ -25,7 +25,7 @@ describe("Sniper Trade", () => {
     // Setup ERC20 (USDC) contract...
     token0 = new ethers.Contract(TOKEN0, ERC20.abi, owner)
     token1 = new ethers.Contract(TOKEN1, ERC20.abi, owner)
-    usdc = new ethers.Contract(USDC, ERC20.abi, owner)
+    weth = new ethers.Contract(WETH, ERC20.abi, owner)
   })
 
   describe("Deployment", () => {
@@ -35,11 +35,11 @@ describe("Sniper Trade", () => {
   })
 
   describe('Impersonating an account to acquire USDC', () => {
-    it('Sends USDC to deployer', async () => {
-      const usdcBalanceBefore = await usdc.connect(owner).balanceOf(owner.address)
+    it('Sends WETH to deployer', async () => {
+      const balanceBefore = await weth.connect(owner).balanceOf(owner.address)
 
       // Account to impersonate
-      const UNLOCKED_ACCOUNT = "0x48EC5560bFD59b95859965cCE48cC244CFDF6b0c"
+      const UNLOCKED_ACCOUNT = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
 
       await hre.network.provider.request({
         method: "hardhat_impersonateAccount",
@@ -48,11 +48,11 @@ describe("Sniper Trade", () => {
 
       const signer = await hre.ethers.getSigner(UNLOCKED_ACCOUNT)
 
-      // Transfer USDC to owner of Sniper Trade
-      await (await usdc.connect(signer).transfer(owner.address, ethers.parseUnits('10000', 6))).wait()
+      // Transfer weth to owner of Sniper Trade
+      await (await weth.connect(signer).transfer(owner.address, ethers.parseUnits('10000', 6))).wait()
 
-      const usdcBalanceAfter = await usdc.balanceOf(owner.address)
-      expect(usdcBalanceAfter).to.be.above(usdcBalanceBefore)
+      const balanceAfter = await weth.balanceOf(owner.address)
+      expect(balanceAfter).to.be.above(balanceBefore)
     })
   })
 
@@ -60,7 +60,7 @@ describe("Sniper Trade", () => {
     const AMOUNT = ethers.parseUnits('1', 6)
 
     beforeEach(async () => {
-      await (await usdc.connect(owner).transfer(
+      await (await weth.connect(owner).transfer(
         await sniperTrade.getAddress(),
         ethers.parseUnits('1000', 6)
       )).wait()
@@ -68,13 +68,13 @@ describe("Sniper Trade", () => {
 
     it("Swap Token0 to Token1 ", async () => {
 
-      const usdcBalanceBefore = await usdc.connect(owner).balanceOf(sniperTrade.getAddress())
+      const balanceBefore = await weth.connect(owner).balanceOf(sniperTrade.getAddress())
 
-      let transaction = await sniperTrade.connect(owner).buyToken(UNISWAP_V3_ROUTER, usdc, AMOUNT, token1, 500)
+      let transaction = await sniperTrade.connect(owner).buyToken(UNISWAP_V3_ROUTER, weth, AMOUNT, token1, 500)
       await transaction.wait()
 
-      const usdcBalanceAfter = await usdc.balanceOf(sniperTrade.getAddress())
-      expect(usdcBalanceAfter).to.be.below(usdcBalanceBefore)
+      const balanceAfter = await weth.balanceOf(sniperTrade.getAddress())
+      expect(balanceAfter).to.be.below(balanceBefore)
     })
 
     // it("Swap USDC to WETH and the inverse is failing", async () => {
@@ -89,20 +89,20 @@ describe("Sniper Trade", () => {
     describe('Success', () => {
 
       beforeEach(async () => {
-        await (await usdc.connect(owner).transfer(
+        await (await weth.connect(owner).transfer(
           await sniperTrade.getAddress(),
           ethers.parseUnits('1000', 6)
         )).wait()
       })
       
-      it("withdraw USDC ", async () => {
-        const usdcBalanceBefore = await usdc.connect(owner).balanceOf(sniperTrade.getAddress())
+      it("withdraw weth ", async () => {
+        const balanceBefore = await weth.connect(owner).balanceOf(sniperTrade.getAddress())
 
-        let transaction = await sniperTrade.connect(owner).withdrawToken(usdc)
+        let transaction = await sniperTrade.connect(owner).withdrawToken(weth)
         await transaction.wait()
 
-        const usdcBalanceAfter = await usdc.balanceOf(sniperTrade.getAddress())
-        expect(usdcBalanceAfter).to.be.below(usdcBalanceBefore)
+        const balanceAfter = await weth.balanceOf(sniperTrade.getAddress())
+        expect(balanceAfter).to.be.below(balanceBefore)
       })
 
       it("withdraw ETH ", async () => {
