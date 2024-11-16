@@ -4,8 +4,13 @@ const { GoPlus, ErrorCode } = require('@goplus/sdk-node');
 const axios = require('axios');
 const ethers = require("ethers");
 
+const { getTokenAndContract, getPoolContract, calculatePrice } = require('./helpers/helpers')
 const { provider, uniswap, sniperTrade } = require('./helpers/initialization')
 const config = require('./config.json')
+
+const UNITS = config.PROJECT_SETTINGS.PRICE_UNITS
+const PRICE_MULTIPLIER = config.PROJECT_SETTINGS.PRICE_MULTIPLIER
+const WETH_AMOUNT = config.PROJECT_SETTINGS.WETH_AMOUNT
 
 let isExecuting = false
 
@@ -19,21 +24,21 @@ const main = async () => {
   console.log("Waiting for new pools...\n")
 }
 
-const newPoolHandler = async (token0, token1, fee, tickSpacing, pool) => {
+const newPoolHandler = async (_token0, _token1, _fee, _tickSpacing, _pool) => {
     if (!isExecuting) {
         isExecuting = true
 
-        console.log(`Pool created with ${token0} & ${token1} at ${pool}`)
+        console.log(`Pool created with ${_token0} & ${_token1} at ${_pool}`)
 
         const funds = Object.values(config.FUNDINGS)
 
         let tokenIn, tokenOut
-        if (funds.includes(token0)) {
-          tokenIn = token0
-          tokenOut = token1
-        } else if (funds.includes(token1)) {
-          tokenIn = token1
-          tokenOut = token0
+        if (funds.includes(_token0)) {
+          tokenIn = _token0
+          tokenOut = _token1
+        } else if (funds.includes(_token1)) {
+          tokenIn = _token1
+          tokenOut = _token0
         } else {
           isExecuting = false
           return
@@ -48,9 +53,12 @@ const newPoolHandler = async (token0, token1, fee, tickSpacing, pool) => {
           const tokenIsSecure = checkSecurity(securityData.result[tokenKey], tokenOut)
 
           if (tokenIsSecure) {
-              const amount = ethers.parseUnits('10', 6)
               try {
-                await executeTrade(tokenIn, tokenOut, amount, fee)
+                const amount = ethers.parseEther(WETH_AMOUNT)
+                const success = await executeTrade(tokenIn, tokenOut, amount, _fee)
+                if (success) {
+                  watchPoolPrice(_pool, _fee, tokenIn, tokenOut)
+                }
               } catch (error) {
                 console.error(error)
               }
@@ -64,11 +72,11 @@ const newPoolHandler = async (token0, token1, fee, tickSpacing, pool) => {
 }
 
 // Fetch security info from GoPlus
-const fetchSecurityInfo = async (_token0) => {
+const fetchSecurityInfo = async (token0) => {
   let chainId = "1";
   
   // It will only return 1 result for the 1st token address if not called getAccessToken before
-  let res = await GoPlus.tokenSecurity(chainId, [_token0], 30);
+  let res = await GoPlus.tokenSecurity(chainId, [token0], 30);
   if (res.code != ErrorCode.SUCCESS) {
     console.error(res.message);
   } else {
@@ -79,7 +87,6 @@ const fetchSecurityInfo = async (_token0) => {
 // Check security info from GoPlus
 
 // Analyze the Results: The API will return various security metrics and information about the token. This may include:
-
 // Contract vulnerabilities
 // Token blacklist status
 // Ownership and control details
@@ -97,9 +104,11 @@ async function checkSecurity(_securityInfo, _tokenAddress) {
   return true;
 }
 
+/**
+ * 
+ * 
+ */
 async function executeTrade(_tokenIn, _tokenOut, _amount, _fee) {
-  console.log(`Buy newly listed token...\n`)
-
   const routerPath = await uniswap.router.getAddress()
 
   // Create Signer
@@ -108,16 +117,68 @@ async function executeTrade(_tokenIn, _tokenOut, _amount, _fee) {
   if (config.PROJECT_SETTINGS.isDeployed) {
     console.log(`Sniper Trade address: ${await sniperTrade.getAddress()}\n`)
 
-    const transaction = await sniperTrade.connect(account).buyToken(
-      routerPath,
-      _tokenIn,
-      _amount,
-      _tokenOut,
-      _fee
-    )
+    if (_amount > 0) {
+      const transaction = await sniperTrade.connect(account).buyToken(
+        routerPath,
+        _tokenIn,
+        _amount,
+        _tokenOut,
+        _fee
+      )
+      await transaction.wait(0)
+    } else {
+      const transaction = await sniperTrade.connect(account).sellToken(
+        routerPath,
+        _tokenIn,
+        _tokenOut,
+        _fee
+      )
+      await transaction.wait(0)
+    }
 
-    const receipt = await transaction.wait(0)
-    console.log(`Trade Complete: ${receipt} \n`)
+    console.log(`Trade Complete... \n`)
+    return true
+  }
+  
+  return false
+}
+
+const watchPoolPrice = async (_poolAddress, _fee, _tokenIn, _tokenOut) => {
+  try {
+    const { tokenIn, tokenOut } = await getTokenAndContract(_tokenIn, _tokenOut, provider)
+
+    const pool = await getPoolContract(_poolAddress, provider)
+    console.log(`Uniswap Pool Address: ${await pool.getAddress()}`)
+    console.log(`Using ${tokenIn.symbol}/${tokenOut.symbol}\n`)
+
+    const price0 = await calculatePrice(pool, tokenIn, tokenOut)
+    console.log(`Calculated price: ${price0} \n`)
+
+    pool.on('Swap', () => poolPriceHandler(pool, tokenIn, tokenOut, price0))
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+const poolPriceHandler = async (_pool, _tokenIn, _tokenOut, _price0) => {
+
+  console.log(`Swap event: ${_tokenIn.symbol}/${_tokenOut.symbol}\n`)
+
+  const newPrice = await calculatePrice(_pool, _tokenIn, _tokenOut)
+
+  const newFPrice = Number(newPrice).toFixed(UNITS)
+  const oldFPrice = Number(_price0).toFixed(UNITS)
+  
+  // Sell tokenOut if price reached it's target amount
+  if (newFPrice >= oldFPrice * PRICE_MULTIPLIER) {
+    console.log(`Token ${tokenOut.symbol} original price: ${oldFPrice} \n`)
+    console.log(`Sell ${tokenOut.symbol} at price: ${newFPrice} \n`)
+    console.log(`-----------------------------------------\n`)
+
+    const success = await executeTrade(_tokenOut, _tokenIn, 0, _pool.fee)
+    if (success) {
+      // TODO: remove listener after tokenOut is sold
+    }
   }
 }
 

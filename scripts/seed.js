@@ -27,10 +27,6 @@ async function main() {
     // Fetch WETH token
     const weth = new ethers.Contract(config.FUNDINGS.WETH, ERC20.abi, deployer)
     console.log(`WETH token fetched: ${await weth.getAddress()}\n`)
-
-    // Fetch USDT token
-    const usdt = new ethers.Contract(config.FUNDINGS.USDT, ERC20.abi, deployer)
-    console.log(`USDT token fetched: ${await usdt.getAddress()}\n`)
   
     ////////////////////////////////////////////////////
     // Send Tokens to SniperTrade
@@ -53,10 +49,10 @@ async function main() {
     console.log(`Fund WETH... \n`)
 
     // Transfer WETH to owner of Sniper Trade
-    await (await weth.connect(signer).transfer(deployer.address, ethers.parseUnits('10000', 6))).wait()
+    await (await weth.connect(signer).transfer(deployer.address, ethers.parseEther('100'))).wait()
 
     // Send weth token to contract
-    transaction = await weth.connect(deployer).transfer(sniperTradeAddress, ethers.parseUnits('1000', 6))
+    transaction = await weth.connect(deployer).transfer(sniperTradeAddress, ethers.parseEther('90'))
     await transaction.wait()
 
     // console.log(`Fund USDT... \n`)
