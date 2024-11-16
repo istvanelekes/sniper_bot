@@ -11,6 +11,7 @@ const config = require('./config.json')
 const UNITS = config.PROJECT_SETTINGS.PRICE_UNITS
 const PRICE_MULTIPLIER = config.PROJECT_SETTINGS.PRICE_MULTIPLIER
 const WETH_AMOUNT = config.PROJECT_SETTINGS.WETH_AMOUNT
+const FUNDINGS = Object.values(config.FUNDINGS)
 
 let isExecuting = false
 
@@ -25,50 +26,48 @@ const main = async () => {
 }
 
 const newPoolHandler = async (_token0, _token1, _fee, _tickSpacing, _pool) => {
-    if (!isExecuting) {
-        isExecuting = true
+  if (!isExecuting) {
+    isExecuting = true
 
-        console.log(`Pool created with ${_token0} & ${_token1} at ${_pool}`)
+    console.log(`Pool created with ${_token0} & ${_token1} at ${_pool} \n`)
 
-        const funds = Object.values(config.FUNDINGS)
+    let tokenWeth, tokenNew
 
-        let tokenIn, tokenOut
-        if (funds.includes(_token0)) {
-          tokenIn = _token0
-          tokenOut = _token1
-        } else if (funds.includes(_token1)) {
-          tokenIn = _token1
-          tokenOut = _token0
-        } else {
-          isExecuting = false
-          return
-        }
-
-        console.log("Fetch Security info...\n")
-        const securityData = await fetchSecurityInfo(tokenOut)
-        const tokenKey = tokenOut.toLowerCase()
-
-        if (securityData.result && securityData.result[tokenKey]) {
-          console.log("Check Security info...\n")
-          const tokenIsSecure = checkSecurity(securityData.result[tokenKey], tokenOut)
-
-          if (tokenIsSecure) {
-              try {
-                const amount = ethers.parseEther(WETH_AMOUNT)
-                const success = await executeTrade(tokenIn, tokenOut, amount, _fee)
-                if (success) {
-                  watchPoolPrice(_pool, _fee, tokenIn, tokenOut)
-                }
-              } catch (error) {
-                console.error(error)
-              }
-          }
-        }
-
-        isExecuting = false
-
-        console.log("Waiting for new pools...\n")
+    if (FUNDINGS.includes(_token0)) {
+      tokenWeth = _token0
+      tokenNew = _token1
+    } else if (FUNDINGS.includes(_token1)) {
+      tokenWeth = _token1
+      tokenNew = _token0
+    } else {
+      isExecuting = false
+      return
     }
+
+    console.log("Fetch Security info...\n")
+    const securityData = await fetchSecurityInfo(tokenNew)
+    const tokenKey = tokenNew.toLowerCase()
+
+    if (securityData.result && securityData.result[tokenKey]) {
+      console.log("Check Security info...\n")
+      const tokenIsSecure = checkSecurity(securityData.result[tokenKey], tokenNew)
+
+      if (tokenIsSecure) {
+        try {
+          const amount = ethers.parseEther(WETH_AMOUNT)
+          const success = await executeTrade(tokenWeth, tokenNew, amount, _fee)
+          if (success) {
+            watchPoolPrice(_pool, _fee, tokenWeth, tokenNew)
+          }
+        } catch (error) {
+          console.error(error)
+        }
+      }
+    }
+
+    isExecuting = false
+    console.log("Waiting for new pools...\n")
+  }
 }
 
 // Fetch security info from GoPlus
@@ -105,8 +104,12 @@ async function checkSecurity(_securityInfo, _tokenAddress) {
 }
 
 /**
- * 
- * 
+ * This function performs the token exchange on Uniswap by calling the 
+ * SniperTrade contract functions.
+ * @param _tokenIn will be sold
+ * @param _tokenOut will be bought
+ * @param _amount 0 means we will sold all the balance of _tokenIn, otherwise a specific amount will be sold
+ * @param _fee trading fee
  */
 async function executeTrade(_tokenIn, _tokenOut, _amount, _fee) {
   const routerPath = await uniswap.router.getAddress()
@@ -144,20 +147,16 @@ async function executeTrade(_tokenIn, _tokenOut, _amount, _fee) {
 }
 
 const watchPoolPrice = async (_poolAddress, _fee, _tokenIn, _tokenOut) => {
-  try {
-    const { tokenIn, tokenOut } = await getTokenAndContract(_tokenIn, _tokenOut, provider)
+  const { tokenIn, tokenOut } = await getTokenAndContract(_tokenIn, _tokenOut, provider)
 
-    const pool = await getPoolContract(_poolAddress, provider)
-    console.log(`Uniswap Pool Address: ${await pool.getAddress()}`)
-    console.log(`Using ${tokenIn.symbol}/${tokenOut.symbol}\n`)
+  const pool = await getPoolContract(_poolAddress, provider)
+  console.log(`Uniswap Pool Address: ${await pool.getAddress()}`)
+  console.log(`Using ${tokenIn.symbol}/${tokenOut.symbol}\n`)
 
-    const price0 = await calculatePrice(pool, tokenIn, tokenOut)
-    console.log(`Calculated price: ${price0} \n`)
+  const price0 = await calculatePrice(pool, tokenIn, tokenOut)
+  console.log(`Calculated price: ${price0} \n`)
 
-    pool.on('Swap', () => poolPriceHandler(pool, tokenIn, tokenOut, price0))
-  } catch (error) {
-    console.error(error)
-  }
+  pool.on('Swap', () => poolPriceHandler(pool, tokenIn, tokenOut, price0))
 }
 
 const poolPriceHandler = async (_pool, _tokenIn, _tokenOut, _price0) => {
@@ -169,27 +168,57 @@ const poolPriceHandler = async (_pool, _tokenIn, _tokenOut, _price0) => {
   const newFPrice = Number(newPrice).toFixed(UNITS)
   const oldFPrice = Number(_price0).toFixed(UNITS)
   
-  // Sell tokenOut if price reached it's target amount
+  // Sell _tokenOut if price reached it's target amount
   if (newFPrice >= oldFPrice * PRICE_MULTIPLIER) {
-    console.log(`Token ${tokenOut.symbol} original price: ${oldFPrice} \n`)
-    console.log(`Sell ${tokenOut.symbol} at price: ${newFPrice} \n`)
+    console.log(`Bougth ${_tokenOut.symbol} at price: ${oldFPrice} \n`)
+    console.log(`Sell ${_tokenOut.symbol} at price: ${newFPrice} \n`)
     console.log(`-----------------------------------------\n`)
 
-    const success = await executeTrade(_tokenOut, _tokenIn, 0, _pool.fee)
-    if (success) {
-      // TODO: remove listener after tokenOut is sold
+    // Create Signer
+    const account = (config.PROJECT_SETTINGS.isLocal) ? await provider.getSigner() : new ethers.Wallet(process.env.PRIVATE_KEY, provider)
+
+    // Fetch token balances before
+    const tokenBalanceBefore = await _tokenIn.contract.balanceOf(sniperTrade.getAddress())
+    const ethBalanceBefore = await provider.getBalance(account.address)
+
+    if (FUNDINGS.includes(_tokenIn.address)) {
+      const success = await executeTrade(_tokenOut, _tokenIn, 0, _pool.fee)
+      if (success) {
+        // TODO: remove listener after tokenOut is sold
+      }
     }
+
+    // Fetch token balances after
+    const tokenBalanceAfter = await _tokenIn.contract.balanceOf(sniperTrade.getAddress())
+    const ethBalanceAfter = await provider.getBalance(account.address)
+
+    const tokenBalanceDifference = tokenBalanceAfter - tokenBalanceBefore
+    const ethBalanceDifference = ethBalanceBefore - ethBalanceAfter
+
+    const data = {
+      'ETH Balance Before': ethers.formatUnits(ethBalanceBefore, 18),
+      'ETH Balance After': ethers.formatUnits(ethBalanceAfter, 18),
+      'ETH Spent (gas)': ethers.formatUnits(ethBalanceDifference.toString(), 18),
+      '-': {},
+      'WETH Balance BEFORE': ethers.formatUnits(tokenBalanceBefore, _tokenIn.decimals),
+      'WETH Balance AFTER': ethers.formatUnits(tokenBalanceAfter, _tokenIn.decimals),
+      'WETH Gained/Lost': ethers.formatUnits(tokenBalanceDifference.toString(), _tokenIn.decimals),
+      '-': {},
+      'Total Gained/Lost': `${ethers.formatUnits((tokenBalanceDifference - ethBalanceDifference).toString(), _tokenIn.decimals)}`
+    }
+
+    console.table(data)
   }
 }
 
 /// this function is for testing purposes, by going backward on the blockchain
-const loadAllPools = async (uniswap) => {
+const loadAllPools = async (uniswapFactory) => {
 
   let block = await provider.getBlockNumber()
 
   while (block > 0) {
   
-    const poolStream = await uniswap.queryFilter('PoolCreated', block - 1, block)  
+    const poolStream = await uniswapFactory.queryFilter('PoolCreated', block - 1, block)  
 
     if (poolStream.length > 0) {
       const pools = poolStream.map(event => {
