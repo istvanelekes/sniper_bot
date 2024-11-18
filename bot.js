@@ -62,6 +62,8 @@ const newPoolHandler = async (_token0, _token1, _fee, _tickSpacing, _pool) => {
         } catch (error) {
           console.error(error)
         }
+      } else {
+        console.log(`Token is not secure: ${tokenNew}\n`)
       }
     }
 
@@ -84,23 +86,47 @@ const fetchSecurityInfo = async (token0) => {
 }
 
 // Check security info from GoPlus
+// Analyze the Results: The API will return various security metrics and information about the token.
+function checkSecurity(_securityInfo, _tokenAddress) {
 
-// Analyze the Results: The API will return various security metrics and information about the token. This may include:
-// Contract vulnerabilities
-// Token blacklist status
-// Ownership and control details
-// Code audits and reviews
-// Historical security incidents
-async function checkSecurity(_securityInfo, _tokenAddress) {
-  if (_securityInfo['is_open_source'] === false ||
-    _securityInfo['is_honeypot'] === true ||
-    _securityInfo['is_in_dex'] === false ||
-    _securityInfo['cannot_buy'] === true
+  // use this for debug purposes
+  // console.log(_securityInfo)
+
+  // Check Contract Security
+  if (_securityInfo['is_open_source'] === '0' ||
+    _securityInfo['is_proxy'] === '1' ||
+    _securityInfo['is_mintable'] === '1' ||
+    _securityInfo['owner_change_balance'] === '1' ||
+    _securityInfo['hidden_owner'] === '1' ||
+    _securityInfo['selfdestruct'] === '1' ||
+    _securityInfo['external_call'] === '1' ||
+    _securityInfo['gas_abuse'] === '1'
   ) {
-      return false;
+      return false
   }
 
-  return true;
+  // Check Trading Security
+  if (_securityInfo['is_honeypot'] === '1' ||
+    // TODO: Check is_in_dex
+    _securityInfo['is_in_dex'] === '0' ||
+    _securityInfo['cannot_buy'] === '1' ||
+    _securityInfo['cannot_sell_all'] === '1' ||
+    _securityInfo['slippage_modifiable'] === '1' ||
+    _securityInfo['personal_slippage_modifiable'] === '1' ||
+    _securityInfo['is_blacklisted'] === '1' ||
+    _securityInfo['transfer_pausable'] === '1'
+  ) {
+      return false
+  }
+
+  // Check Info Security
+  if (_securityInfo['is_true_token'] === '0' ||
+    _securityInfo['is_airdrop_scam'] === '1'
+  ) {
+      return false
+  }
+
+  return true
 }
 
 /**
