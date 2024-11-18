@@ -25,8 +25,14 @@ async function getTokenAndContract(_token0Address, _token1Address, _provider) {
   return { tokenIn, tokenOut }
 }
 
-async function getPoolContract(_poolAddress, _provider) {
-  const pool = new ethers.Contract(_poolAddress, IUniswapV3Pool.abi, _provider)
+async function getPoolContract(_poolAddress, _fee, _provider) {
+  const poolContract = new ethers.Contract(_poolAddress, IUniswapV3Pool.abi, _provider)
+
+  const pool = {
+    contract: poolContract,
+    address: _poolAddress,
+    fee: _fee
+  }
   return pool
 }
 

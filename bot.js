@@ -6,8 +6,9 @@ const ethers = require("ethers");
 
 const { getTokenAndContract, getPoolContract, calculatePrice } = require('./helpers/helpers')
 const { provider, uniswap, sniperTrade } = require('./helpers/initialization')
-const config = require('./config.json')
+const { loadAllPools, loadAllSwaps } = require('./helpers/testing')
 
+const config = require('./config.json')
 const UNITS = config.PROJECT_SETTINGS.PRICE_UNITS
 const PRICE_MULTIPLIER = config.PROJECT_SETTINGS.PRICE_MULTIPLIER
 const WETH_AMOUNT = config.PROJECT_SETTINGS.WETH_AMOUNT
@@ -18,14 +19,15 @@ let isExecuting = false
 const main = async () => {
 
   // this function is for testing purposes, by going backward on the blockchain
-  await loadAllPools(uniswap.factory)
+  await loadAllPools(newPoolHandler, provider, uniswap.factory)
+  let block = await provider.getBlockNumber()
 
-  uniswap.factory.on('PoolCreated', (token0, token1, fee, tickSpacing, pool) => newPoolHandler(token0, token1, fee, tickSpacing, pool))
+  uniswap.factory.on('PoolCreated', (token0, token1, fee, tickSpacing, pool) => newPoolHandler(token0, token1, fee, tickSpacing, pool, block))
 
   console.log("Waiting for new pools...\n")
 }
 
-const newPoolHandler = async (_token0, _token1, _fee, _tickSpacing, _pool) => {
+const newPoolHandler = async (_token0, _token1, _fee, _tickSpacing, _pool, _blockNumber) => {
   if (!isExecuting) {
     isExecuting = true
 
@@ -57,7 +59,7 @@ const newPoolHandler = async (_token0, _token1, _fee, _tickSpacing, _pool) => {
           const amount = ethers.parseEther(WETH_AMOUNT)
           const success = await executeTrade(tokenWeth, tokenNew, amount, _fee)
           if (success) {
-            watchPoolPrice(_pool, _fee, tokenWeth, tokenNew)
+            watchPoolPrice(_pool, _fee, tokenWeth, tokenNew, _blockNumber)
           }
         } catch (error) {
           console.error(error)
@@ -172,27 +174,32 @@ async function executeTrade(_tokenIn, _tokenOut, _amount, _fee) {
   return false
 }
 
-const watchPoolPrice = async (_poolAddress, _fee, _tokenIn, _tokenOut) => {
+const watchPoolPrice = async (_poolAddress, _fee, _tokenIn, _tokenOut, _blockNumber) => {
   const { tokenIn, tokenOut } = await getTokenAndContract(_tokenIn, _tokenOut, provider)
 
-  const pool = await getPoolContract(_poolAddress, provider)
-  console.log(`Uniswap Pool Address: ${await pool.getAddress()}`)
+  const pool = await getPoolContract(_poolAddress, _fee, provider)
+  console.log(`Uniswap Pool Address: ${await pool.contract.getAddress()}`)
   console.log(`Using ${tokenIn.symbol}/${tokenOut.symbol}\n`)
 
-  const price0 = await calculatePrice(pool, tokenIn, tokenOut)
+  const price0 = await calculatePrice(pool.contract, tokenIn, tokenOut)
   console.log(`Calculated price: ${price0} \n`)
+
+  // this is for testing purposes
+  await loadAllSwaps(poolPriceHandler, _blockNumber, pool, tokenIn, tokenOut)
 
   pool.on('Swap', () => poolPriceHandler(pool, tokenIn, tokenOut, price0))
 }
 
-const poolPriceHandler = async (_pool, _tokenIn, _tokenOut, _price0) => {
+const poolPriceHandler = async (_pool, _tokenIn, _tokenOut, _price0, _newPrice) => {
 
   console.log(`Swap event: ${_tokenIn.symbol}/${_tokenOut.symbol}\n`)
 
-  const newPrice = await calculatePrice(_pool, _tokenIn, _tokenOut)
+  // const newPrice = await calculatePrice(_pool, _tokenIn, _tokenOut)
 
-  const newFPrice = Number(newPrice).toFixed(UNITS)
-  const oldFPrice = Number(_price0).toFixed(UNITS)
+  // const newFPrice = Number(_newPrice).toFixed(UNITS)
+  // const oldFPrice = Number(_price0).toFixed(UNITS)
+  const newFPrice = Number(_newPrice)
+  const oldFPrice = Number(_price0)
   
   // Sell _tokenOut if price reached it's target amount
   if (newFPrice >= oldFPrice * PRICE_MULTIPLIER) {
@@ -237,28 +244,7 @@ const poolPriceHandler = async (_pool, _tokenIn, _tokenOut, _price0) => {
   }
 }
 
-/// this function is for testing purposes, by going backward on the blockchain
-const loadAllPools = async (uniswapFactory) => {
-
-  let block = await provider.getBlockNumber()
-
-  while (block > 0) {
-  
-    const poolStream = await uniswapFactory.queryFilter('PoolCreated', block - 1, block)  
-
-    if (poolStream.length > 0) {
-      const pools = poolStream.map(event => {
-        return { hash: event.transactionHash, args: event.args }
-      })
-
-      pools.forEach(element => {
-        newPoolHandler.apply(this, element.args)
-      });
-    }
-
-    block -= 1
-  }
-}
+main()
 
 // Fetch latest pool data from DexScreener
 /*
@@ -284,5 +270,3 @@ async function fetchLatestPools(_from, _to) {
     });
 }
     */
-
-main()

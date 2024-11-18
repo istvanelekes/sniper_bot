@@ -4,7 +4,7 @@
         "isDeployed": true,
         "SNIPER_TRADE_ADDRESS": "0xA899118f4BCCb62F8c6A37887a4F450D8a4E92E0",
         "PRICE_UNITS": 0,
-        "PRICE_MULTIPLIER": 2.0,
+        "PRICE_MULTIPLIER": 1.0,
         "WETH_AMOUNT": "0.02"
     },
     "FUNDINGS": {
