@@ -15,6 +15,7 @@ const WETH_AMOUNT = config.PROJECT_SETTINGS.WETH_AMOUNT
 const FUNDINGS = Object.values(config.FUNDINGS)
 
 let isExecuting = false
+let isExecutingSwap = false
 
 const main = async () => {
 
@@ -62,7 +63,7 @@ const newPoolHandler = async (_token0, _token1, _fee, _tickSpacing, _pool, _bloc
             watchPoolPrice(_pool, _fee, tokenWeth, tokenNew, _blockNumber)
           }
         } catch (error) {
-          console.error(error)
+          console.log(`Error on buy token: ${error} \n`)
         }
       } else {
         console.log(`Token is not secure: ${tokenNew}\n`)
@@ -143,13 +144,13 @@ async function executeTrade(_tokenIn, _tokenOut, _amount, _fee) {
   const routerPath = await uniswap.router.getAddress()
 
   // Create Signer
-  const account = (config.PROJECT_SETTINGS.isLocal) ? await provider.getSigner() : new ethers.Wallet(process.env.PRIVATE_KEY, provider)
+  const signer = (config.PROJECT_SETTINGS.isLocal) ? await provider.getSigner() : new ethers.Wallet(process.env.PRIVATE_KEY, provider)
 
   if (config.PROJECT_SETTINGS.isDeployed) {
     console.log(`Sniper Trade address: ${await sniperTrade.getAddress()}\n`)
 
     if (_amount > 0) {
-      const transaction = await sniperTrade.connect(account).buyToken(
+      const transaction = await sniperTrade.connect(signer).buyToken(
         routerPath,
         _tokenIn,
         _amount,
@@ -158,7 +159,7 @@ async function executeTrade(_tokenIn, _tokenOut, _amount, _fee) {
       )
       await transaction.wait(0)
     } else {
-      const transaction = await sniperTrade.connect(account).sellToken(
+      const transaction = await sniperTrade.connect(signer).sellToken(
         routerPath,
         _tokenIn,
         _tokenOut,
@@ -192,6 +193,10 @@ const watchPoolPrice = async (_poolAddress, _fee, _tokenIn, _tokenOut, _blockNum
 
 const poolPriceHandler = async (_pool, _tokenIn, _tokenOut, _price0, _newPrice) => {
 
+  if (isExecutingSwap) { return }
+
+  isExecutingSwap = true
+
   console.log(`Swap event: ${_tokenIn.symbol}/${_tokenOut.symbol}\n`)
 
   // const newPrice = await calculatePrice(_pool, _tokenIn, _tokenOut)
@@ -215,9 +220,16 @@ const poolPriceHandler = async (_pool, _tokenIn, _tokenOut, _price0, _newPrice) 
     const ethBalanceBefore = await provider.getBalance(account.address)
 
     if (FUNDINGS.includes(_tokenIn.address)) {
-      const success = await executeTrade(_tokenOut, _tokenIn, 0, _pool.fee)
-      if (success) {
-        // TODO: remove listener after tokenOut is sold
+      try {
+        const tokenOutBalance = await _tokenOut.contract.balanceOf(sniperTrade)
+        console.log(`Try to sell ${_tokenOut.symbol}, balance is: ${tokenOutBalance}`)
+
+        const success = await executeTrade(_tokenOut.address, _tokenIn.address, 0, _pool.fee)
+        if (success) {
+          // TODO: remove listener after tokenOut is sold
+        }
+      } catch (error) {
+        console.log(`Error on sell token: ${error} \n`)
       }
     }
 
@@ -242,6 +254,7 @@ const poolPriceHandler = async (_pool, _tokenIn, _tokenOut, _price0, _newPrice) 
 
     console.table(data)
   }
+  isExecutingSwap = false
 }
 
 main()

@@ -79,12 +79,6 @@ contract SniperTrade {
             amountOut,
             _fee
         );
-
-        // Transfer any excess tokens [i.e. profits] to owner
-        uint256 tokenBalance = IERC20(_tokenOut).balanceOf(address(this));
-        if (tokenBalance > amountOut) {
-            IERC20(_tokenOut).transfer(owner, tokenBalance - amountOut);
-        }
     }
 
     /**
@@ -94,6 +88,17 @@ contract SniperTrade {
     function withdrawToken(address _tokenAddress) public onlyOwner {
         uint256 balance = IERC20(_tokenAddress).balanceOf(address(this));
         IERC20(_tokenAddress).transfer(owner, balance);
+    }
+
+    /**
+     * Withdraw x percent of tokens extra balance remaining.
+     * @param _tokenAddress Token address to withdraw.
+     * @param _percent Token amount percentage
+     */
+    function withdrawTokenAtPercent(address _tokenAddress, uint256 _percent) public onlyOwner {
+        uint256 balance = IERC20(_tokenAddress).balanceOf(address(this));
+        uint256 amount = balance * _percent / 100;
+        IERC20(_tokenAddress).transfer(owner, amount);
     }
 
     /// Withdraw Ether from the contract
