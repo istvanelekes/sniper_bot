@@ -37,7 +37,7 @@ async function main() {
     console.log(`Impersonate account... \n`)
 
     // Account to impersonate
-    const UNLOCKED_ACCOUNT = "0x74B2A56432b14E182597A9cb31e2Db39dFF74B2C"
+    const UNLOCKED_ACCOUNT = "0x6B44ba0a126a2A1a8aa6cD1AdeeD002e141Bcd44"
 
     await hre.network.provider.request({
     method: "hardhat_impersonateAccount",
