@@ -24,7 +24,7 @@ async function loadAllPools(_newPoolHandler, _block, _uniswapFactory) {
 
 async function loadAllSwaps(_poolPriceHandler, _blockNumber, _lastBlock, _pool, _tokenIn, _tokenOut) {
     let price0
-    while (_blockNumber < _lastBlock) {
+    // while (_blockNumber < _lastBlock) {
 
         const initEvent = await _pool.contract.queryFilter('Initialize', _blockNumber, _blockNumber + 1)
 
@@ -33,7 +33,7 @@ async function loadAllSwaps(_poolPriceHandler, _blockNumber, _lastBlock, _pool, 
             console.log(`Initialize with price: ${price0}`)
         }
 
-        const swapStream = await _pool.contract.queryFilter('Swap', _blockNumber, _blockNumber + 1)  
+        const swapStream = await _pool.contract.queryFilter('Swap', _blockNumber, _lastBlock)  
 
         if (swapStream.length > 0) {
             const swaps = swapStream.map(event => {
@@ -47,7 +47,7 @@ async function loadAllSwaps(_poolPriceHandler, _blockNumber, _lastBlock, _pool, 
         }   
 
         _blockNumber++
-    }
+    // }
 }
 
 function calculatePrice(_sqrtPriceX96, _token0, _token1) {
