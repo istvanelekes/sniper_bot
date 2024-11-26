@@ -1,4 +1,5 @@
 require("dotenv").config()
+require('./helpers/server')
 
 const { GoPlus, ErrorCode } = require('@goplus/sdk-node');
 const axios = require('axios');

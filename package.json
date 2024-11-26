@@ -7,13 +7,11 @@
   },
   "dependencies": {
     "@goplus/sdk-node": "^1.0.12",
-    "@uniswap/sdk-core": "^5.9.0",
     "axios": "^1.7.7",
     "big.js": "^6.2.1",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
-    "express": "^4.18.2",
-    "moment": "^2.30.1"
+    "express": "^4.18.2"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "5.0.0",

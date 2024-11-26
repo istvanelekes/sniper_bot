@@ -2,7 +2,7 @@
     "PROJECT_SETTINGS": {
         "isLocal": true,
         "isDeployed": true,
-        "SNIPER_TRADE_ADDRESS": "0x158d291D8b47F056751cfF47d1eEcd19FDF9B6f8",
+        "SNIPER_TRADE_ADDRESS": "0x2F54D1563963fC04770E85AF819c89Dc807f6a06",
         "PRICE_UNITS": 0,
         "PRICE_MULTIPLIER": 1.521,
         "WETH_AMOUNT": "0.02"
