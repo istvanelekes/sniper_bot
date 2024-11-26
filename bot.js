@@ -16,12 +16,13 @@ const FUNDINGS = Object.values(config.FUNDINGS)
 
 let isExecuting = false
 let isExecutingSwap = false
+let watchList = {}
 
 const main = async () => {
 
-  // this function is for testing purposes, by going backward on the blockchain
-  await loadAllPools(newPoolHandler, provider, uniswap.factory)
   let block = await provider.getBlockNumber()
+  // this function is for testing purposes, by going backward on the blockchain
+  await loadAllPools(newPoolHandler, block, uniswap.factory)
 
   uniswap.factory.on('PoolCreated', (token0, token1, fee, tickSpacing, pool) => newPoolHandler(token0, token1, fee, tickSpacing, pool, block))
 
@@ -60,6 +61,7 @@ const newPoolHandler = async (_token0, _token1, _fee, _tickSpacing, _pool, _bloc
           const amount = ethers.parseEther(WETH_AMOUNT)
           const success = await executeTrade(tokenWeth, tokenNew, amount, _fee)
           if (success) {
+            watchList[tokenNew] = amount
             watchPoolPrice(_pool, _fee, tokenWeth, tokenNew, _blockNumber)
           }
         } catch (error) {
@@ -178,6 +180,9 @@ async function executeTrade(_tokenIn, _tokenOut, _amount, _fee) {
 const watchPoolPrice = async (_poolAddress, _fee, _tokenIn, _tokenOut, _blockNumber) => {
   const { tokenIn, tokenOut } = await getTokenAndContract(_tokenIn, _tokenOut, provider)
 
+  const tokenOutBalance = await tokenOut.contract.balanceOf(sniperTrade)
+  console.log(`Watch ${tokenOut.symbol}, balance is: ${tokenOutBalance}`)
+
   const pool = await getPoolContract(_poolAddress, _fee, provider)
   console.log(`Uniswap Pool Address: ${await pool.contract.getAddress()}`)
   console.log(`Using ${tokenIn.symbol}/${tokenOut.symbol}\n`)
@@ -186,14 +191,17 @@ const watchPoolPrice = async (_poolAddress, _fee, _tokenIn, _tokenOut, _blockNum
   console.log(`Calculated price: ${price0} \n`)
 
   // this is for testing purposes
-  await loadAllSwaps(poolPriceHandler, _blockNumber, pool, tokenIn, tokenOut)
+  let lastBlock = await provider.getBlockNumber()
+  await loadAllSwaps(poolPriceHandler, _blockNumber, lastBlock, pool, tokenIn, tokenOut)
 
-  pool.on('Swap', () => poolPriceHandler(pool, tokenIn, tokenOut, price0))
+  pool.contract.on('Swap', () => poolPriceHandler(pool, tokenIn, tokenOut, price0))
 }
 
 const poolPriceHandler = async (_pool, _tokenIn, _tokenOut, _price0, _newPrice) => {
 
-  if (isExecutingSwap) { return }
+  if (isExecutingSwap || watchList[_tokenOut.address] === 0) {
+     return 
+  }
 
   isExecutingSwap = true
 
@@ -227,6 +235,9 @@ const poolPriceHandler = async (_pool, _tokenIn, _tokenOut, _price0, _newPrice) 
         const success = await executeTrade(_tokenOut.address, _tokenIn.address, 0, _pool.fee)
         if (success) {
           // TODO: remove listener after tokenOut is sold
+          watchList[_tokenOut.address] = 0
+          console.log(`Token removed from watch list ${_tokenOut.symbol} \n`)
+
         }
       } catch (error) {
         console.log(`Error on sell token: ${error} \n`)

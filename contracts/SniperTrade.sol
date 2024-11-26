@@ -68,7 +68,7 @@ contract SniperTrade {
         uint24 _fee
     ) external onlyOwner {
         uint256 amountIn = IERC20(_tokenIn).balanceOf(address(this));
-        uint256 amountOut = trades[_tokenOut][_tokenIn];
+        // uint256 amountOut = trades[_tokenOut][_tokenIn];
 
         // Swap the amount of token0 and expect to get X amount of token1
         _swapOnV3(
@@ -76,7 +76,7 @@ contract SniperTrade {
             _tokenIn,
             amountIn,
             _tokenOut,
-            amountOut,
+            0,
             _fee
         );
     }

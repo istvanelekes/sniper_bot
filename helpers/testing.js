@@ -1,12 +1,11 @@
 const Big = require('big.js')
 
 /// this function is for testing purposes, by going backward on the blockchain
-async function loadAllPools(_newPoolHandler, _provider, _uniswapFactory) {
+async function loadAllPools(_newPoolHandler, _block, _uniswapFactory) {
 
-    let block = await _provider.getBlockNumber()
-    while (block > 0) {
+    while (_block > 0) {
 
-        const poolStream = await _uniswapFactory.queryFilter('PoolCreated', block, block + 1)
+        const poolStream = await _uniswapFactory.queryFilter('PoolCreated', _block, _block + 1)
 
         if (poolStream.length > 0) {
             const pools = poolStream.map(event => {
@@ -15,17 +14,17 @@ async function loadAllPools(_newPoolHandler, _provider, _uniswapFactory) {
 
             pools.forEach(element => {
                 // we need to send the block number for the swap events
-                _newPoolHandler.apply(this, element.args.concat([block]))
+                _newPoolHandler.apply(this, element.args.concat([_block]))
             });
         }
 
-        block -= 1
+        _block -= 1
     }
 }
 
-async function loadAllSwaps(_poolPriceHandler, _blockNumber, _pool, _tokenIn, _tokenOut) {
+async function loadAllSwaps(_poolPriceHandler, _blockNumber, _lastBlock, _pool, _tokenIn, _tokenOut) {
     let price0
-    while (_blockNumber > 0) {
+    while (_blockNumber < _lastBlock) {
 
         const initEvent = await _pool.contract.queryFilter('Initialize', _blockNumber, _blockNumber + 1)
 
@@ -41,10 +40,8 @@ async function loadAllSwaps(_poolPriceHandler, _blockNumber, _pool, _tokenIn, _t
                 return { hash: event.transactionHash, args: event.args}
             })
         
-            swapStream.forEach((element) => {
+            swaps.forEach((element) => {
                 const price1 = calculatePrice(element.args[4], _tokenIn, _tokenOut)
-                console.log(`Swap with price: ${price1}`)
-
                 _poolPriceHandler(_pool, _tokenIn, _tokenOut, price0, price1)
             });
         }   
