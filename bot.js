@@ -79,7 +79,7 @@ const newPoolHandler = async (_token0, _token1, _fee, _tickSpacing, _pool, _bloc
 
 // Fetch security info from GoPlus
 const fetchSecurityInfo = async (token0) => {
-  let chainId = "1";
+  let chainId = "8453";
   
   // It will only return 1 result for the 1st token address if not called getAccessToken before
   let res = await GoPlus.tokenSecurity(chainId, [token0], 30);

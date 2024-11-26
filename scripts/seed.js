@@ -20,7 +20,7 @@ async function main() {
 
     console.log(`Fetching token and transferring to accounts... \n`)
 
-    const sniperTrade = await ethers.getContractAt('SniperTrade', config.PROJECT_SETTINGS.SNIPER_TRADE_ADDRESS)
+    const sniperTrade = await ethers.getContractAt('SniperTrade', config.PROJECT_SETTINGS.SNIPER_TRADE_ADDRESS, deployer)
     const sniperTradeAddress = await sniperTrade.getAddress()
     console.log(`SniperTrade contract fetched: ${sniperTradeAddress}\n`)
 
@@ -37,22 +37,17 @@ async function main() {
     console.log(`Impersonate account... \n`)
 
     // Account to impersonate
-    const UNLOCKED_ACCOUNT = "0x6B44ba0a126a2A1a8aa6cD1AdeeD002e141Bcd44"
+    const UNLOCKED_ACCOUNT = "0x621e7c767004266c8109e83143ab0Da521B650d6"
 
-    await hre.network.provider.request({
-    method: "hardhat_impersonateAccount",
-    params: [UNLOCKED_ACCOUNT],
-    })
-
-    const signer = await hre.ethers.getSigner(UNLOCKED_ACCOUNT)
+    const impersonatedSigner = await hre.ethers.getImpersonatedSigner(UNLOCKED_ACCOUNT)
 
     console.log(`Fund WETH... \n`)
 
     // Transfer WETH to owner of Sniper Trade
-    await (await weth.connect(signer).transfer(deployer.address, ethers.parseEther('100'))).wait()
+    await (await weth.connect(impersonatedSigner).transfer(deployer.address, ethers.parseEther('90'))).wait()
 
     // Send weth token to contract
-    transaction = await weth.connect(deployer).transfer(sniperTradeAddress, ethers.parseEther('90'))
+    transaction = await weth.connect(deployer).transfer(sniperTradeAddress, ethers.parseEther('70'))
     await transaction.wait()
 
     // console.log(`Fund USDT... \n`)
