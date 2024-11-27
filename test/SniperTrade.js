@@ -2,11 +2,11 @@ const { expect } = require("chai")
 const { ethers } = require("hardhat")
 
 const ERC20 = require('@openzeppelin/contracts/build/contracts/ERC20.json')
-const ISwapRouter = require('@uniswap/v3-periphery/artifacts/contracts/interfaces/ISwapRouter.sol/ISwapRouter.json')
+const config = require('../config.json')
 
 describe("Sniper Trade", () => {
   let owner, account
-  let sniperTrade, router
+  let sniperTrade
   let token0, token1, weth
   const TOKEN0 = "0x1315D6D10E92Ec9E3B3f47335e5FFf9aa0DD996D"
   const TOKEN1 = "0x27975B4c21Bea0d85c38e036C389385470716A2A"
@@ -26,8 +26,6 @@ describe("Sniper Trade", () => {
     token0 = new ethers.Contract(TOKEN0, ERC20.abi, owner)
     token1 = new ethers.Contract(TOKEN1, ERC20.abi, owner)
     weth = new ethers.Contract(WETH, ERC20.abi, owner)
-
-    router = new ethers.Contract(UNISWAP_V3_ROUTER, ISwapRouter.abi, provider)
   })
 
   describe("Deployment", () => {
@@ -71,10 +69,6 @@ describe("Sniper Trade", () => {
     it("Swap Token0 to Token1 ", async () => {
 
       const balanceBefore = await weth.connect(owner).balanceOf(sniperTrade.getAddress())
-
-      const routerPath = await router.getAddress()
-
-      console.log(routerPath)
 
       let transaction = await sniperTrade.connect(owner).buyToken(UNISWAP_V3_ROUTER, weth, AMOUNT, token1, 500)
       await transaction.wait()

@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.18;
 
-import {ISwapRouter} from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
+import {IV3SwapRouter} from '@uniswap/swap-router-contracts/contracts/interfaces/IV3SwapRouter.sol';
+import {ISwapRouter02} from '@uniswap/swap-router-contracts/contracts/interfaces/ISwapRouter02.sol';
+
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract SniperTrade {
@@ -123,19 +125,39 @@ contract SniperTrade {
         IERC20(_tokenIn).approve(_router, _amountIn);
 
         // Setup swap parameters
-        ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
+        ISwapRouter02.ExactInputSingleParams memory params = IV3SwapRouter
             .ExactInputSingleParams({
                 tokenIn: _tokenIn,
                 tokenOut: _tokenOut,
                 fee: _fee,
                 recipient: address(this),
-                deadline: block.timestamp,
                 amountIn: _amountIn,
                 amountOutMinimum: _amountOut,
                 sqrtPriceLimitX96: 0
             });
 
         // Perform swap
-        ISwapRouter(_router).exactInputSingle(params);
+        ISwapRouter02(_router).exactInputSingle(params);
     }
+
+    // function _swapOnV2(
+    //     address _router,
+    //     address _tokenIn,
+    //     uint256 _amountIn,
+    //     address _tokenOut,
+    //     uint256 _amountOut,
+    //     uint24 _fee
+    // ) internal {
+    //     // Approve token to swap
+    //     IERC20(_tokenIn).approve(_router, _amountIn);
+
+    //     // Setup swap parameters
+    //     // address[] memory path = [_tokenIn, _tokenOut];
+    //     address[] memory path = new address[](2);
+    //     path[0] = _tokenIn;
+    //     path[1] = _tokenOut;
+
+    //     // Perform swap
+    //     IV2SwapRouter(_router).swapExactTokensForTokens(_amountIn, _amountOut, path, address(this));
+    // }
 }
