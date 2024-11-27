@@ -21,16 +21,12 @@ let watchList = {}
 
 const main = async () => {
 
-  let block = await provider.getBlockNumber()
-  // this function is for testing purposes, by going backward on the blockchain
-  await loadAllPools(newPoolHandler, block, uniswap.factory)
-
-  uniswap.factory.on('PoolCreated', (token0, token1, fee, tickSpacing, pool) => newPoolHandler(token0, token1, fee, tickSpacing, pool, block))
+  uniswap.factory.on('PoolCreated', (token0, token1, fee, tickSpacing, pool) => newPoolHandler(token0, token1, fee, tickSpacing, pool))
 
   console.log("Waiting for new pools...\n")
 }
 
-const newPoolHandler = async (_token0, _token1, _fee, _tickSpacing, _pool, _blockNumber) => {
+const newPoolHandler = async (_token0, _token1, _fee, _tickSpacing, _pool) => {
   if (!isExecuting) {
     isExecuting = true
 
@@ -63,7 +59,7 @@ const newPoolHandler = async (_token0, _token1, _fee, _tickSpacing, _pool, _bloc
           const success = await executeTrade(tokenWeth, tokenNew, amount, _fee)
           if (success) {
             watchList[tokenNew] = amount
-            watchPoolPrice(_pool, _fee, tokenWeth, tokenNew, _blockNumber)
+            watchPoolPrice(_pool, _fee, tokenWeth, tokenNew)
           }
         } catch (error) {
           console.log(`Error on buy token: ${error} \n`)
@@ -178,7 +174,7 @@ async function executeTrade(_tokenIn, _tokenOut, _amount, _fee) {
   return false
 }
 
-const watchPoolPrice = async (_poolAddress, _fee, _tokenIn, _tokenOut, _blockNumber) => {
+const watchPoolPrice = async (_poolAddress, _fee, _tokenIn, _tokenOut) => {
   const { tokenIn, tokenOut } = await getTokenAndContract(_tokenIn, _tokenOut, provider)
 
   const tokenOutBalance = await tokenOut.contract.balanceOf(sniperTrade)
@@ -191,14 +187,10 @@ const watchPoolPrice = async (_poolAddress, _fee, _tokenIn, _tokenOut, _blockNum
   const price0 = await calculatePrice(pool.contract, tokenIn, tokenOut)
   console.log(`Calculated price: ${price0} \n`)
 
-  // this is for testing purposes
-  let lastBlock = await provider.getBlockNumber()
-  await loadAllSwaps(poolPriceHandler, _blockNumber, lastBlock, pool, tokenIn, tokenOut)
-
   pool.contract.on('Swap', () => poolPriceHandler(pool, tokenIn, tokenOut, price0))
 }
 
-const poolPriceHandler = async (_pool, _tokenIn, _tokenOut, _price0, _newPrice) => {
+const poolPriceHandler = async (_pool, _tokenIn, _tokenOut, _price0) => {
 
   if (isExecutingSwap || watchList[_tokenOut.address] === 0) {
      return 
@@ -208,11 +200,11 @@ const poolPriceHandler = async (_pool, _tokenIn, _tokenOut, _price0, _newPrice) 
 
   console.log(`Swap event: ${_tokenIn.symbol}/${_tokenOut.symbol}\n`)
 
-  // const newPrice = await calculatePrice(_pool, _tokenIn, _tokenOut)
+  const newPrice = await calculatePrice(_pool.contract, _tokenIn, _tokenOut)
 
   // const newFPrice = Number(_newPrice).toFixed(UNITS)
   // const oldFPrice = Number(_price0).toFixed(UNITS)
-  const newFPrice = Number(_newPrice)
+  const newFPrice = Number(newPrice)
   const oldFPrice = Number(_price0)
   
   // Sell _tokenOut if price reached it's target amount

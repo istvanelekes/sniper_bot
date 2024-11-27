@@ -1,11 +1,11 @@
 {
     "PROJECT_SETTINGS": {
-        "isLocal": true,
+        "isLocal": false,
         "isDeployed": true,
-        "SNIPER_TRADE_ADDRESS": "0x2F54D1563963fC04770E85AF819c89Dc807f6a06",
+        "SNIPER_TRADE_ADDRESS": "0xA7b75c77d4CD2B42DC2764b661EA233BD08818A9",
         "PRICE_UNITS": 0,
-        "PRICE_MULTIPLIER": 1.521,
-        "WETH_AMOUNT": "0.02"
+        "PRICE_MULTIPLIER": 2.0,
+        "WETH_AMOUNT": "0.00003"
     },
     "FUNDINGS": {
         "WETH": "0x4200000000000000000000000000000000000006"
