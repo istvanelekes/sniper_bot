@@ -9,8 +9,13 @@ module.exports = {
   networks: {
     hardhat: {
       forking: {
-        url: `https://base-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`
+        url: `https://base-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
+        blockNumber: 22943420
       },
+    },
+    base: {
+      url: `https://base-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
+      accounts: [privateKey]
     },
     arbitrum: {
       url: `https://arb-mainnet.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`
