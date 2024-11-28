@@ -17,8 +17,7 @@ const PRICE_MULTIPLIER = config.PROJECT_SETTINGS.PRICE_MULTIPLIER
 const WETH_AMOUNT = config.PROJECT_SETTINGS.WETH_AMOUNT
 const FUNDINGS = Object.values(config.FUNDINGS)
 
-let isExecutingSwap = false
-let watchList = {}
+const tokenMap = new Map()
 
 const main = async () => {
 
@@ -28,7 +27,7 @@ const main = async () => {
 }
 
 const newPoolHandler = async (_token0, _token1, _fee, _tickSpacing, _pool) => {
-  if (Object.keys(watchList).length > 7) {
+  if (tokenMap.size > 7) {
     console.log("Token queue reached limit...\n")
     return
   }
@@ -60,7 +59,7 @@ const newPoolHandler = async (_token0, _token1, _fee, _tickSpacing, _pool) => {
         const amount = ethers.parseEther(WETH_AMOUNT)
         const success = await executeTrade(tokenWeth, tokenNew, amount, _fee)
         if (success) {
-          watchList[tokenNew] = amount
+          tokenMap.set(tokenNew, amount)
           watchPoolPrice(_pool, _fee, tokenWeth, tokenNew)
         }
       } catch (error) {
@@ -130,11 +129,9 @@ const watchPoolPrice = async (_poolAddress, _fee, _tokenIn, _tokenOut) => {
 
 const poolPriceHandler = async (_pool, _tokenIn, _tokenOut, _price0) => {
 
-  if (isExecutingSwap || watchList[_tokenOut.address] === 0) {
+  if (!tokenMap.has(_tokenOut.address)) {
      return 
   }
-
-  isExecutingSwap = true
 
   const newPrice = await calculatePrice(_pool.contract, _tokenIn, _tokenOut)
 
@@ -144,7 +141,7 @@ const poolPriceHandler = async (_pool, _tokenIn, _tokenOut, _price0) => {
   const oldFPrice = Number(_price0)
 
   console.log(`Swap event: ${_tokenIn.symbol}/${_tokenOut.symbol}`)
-  console.log(`New price event: ${newFPrice / oldFPrice} \n`)
+  console.log(`New price ratio: ${newFPrice / oldFPrice} \n`)
   
   // Sell _tokenOut if price reached it's target amount
   if (newFPrice >= oldFPrice * PRICE_MULTIPLIER) {
@@ -153,19 +150,19 @@ const poolPriceHandler = async (_pool, _tokenIn, _tokenOut, _price0) => {
     console.log(`-----------------------------------------\n`)
 
     // Fetch token balances before
-    const tokenBalanceBefore = await _tokenIn.contract.balanceOf(sniperTrade.getAddress())
+    const tokenBalanceBefore = await _tokenIn.contract.balanceOf(await sniperTrade.getAddress())
     const ethBalanceBefore = await provider.getBalance(signer.address)
 
     if (FUNDINGS.includes(_tokenIn.address)) {
       try {
-        const tokenOutBalance = await _tokenOut.contract.balanceOf(sniperTrade)
-        console.log(`Try to sell ${_tokenOut.symbol}, balance is: ${tokenOutBalance}`)
+        console.log(`Try to sell ${_tokenOut.symbol} `)
 
         const success = await executeTrade(_tokenOut.address, _tokenIn.address, 0, _pool.fee)
         if (success) {
           // TODO: remove listener after tokenOut is sold
-          watchList[_tokenOut.address] = 0
-          console.log(`Token removed from watch list ${_tokenOut.symbol} \n`)
+          if (tokenMap.delete(_tokenOut.address)) {
+            console.log(`Token removed from watch list ${_tokenOut.symbol} \n`)
+          }
 
         }
       } catch (error) {
@@ -174,7 +171,7 @@ const poolPriceHandler = async (_pool, _tokenIn, _tokenOut, _price0) => {
     }
 
     // Fetch token balances after
-    const tokenBalanceAfter = await _tokenIn.contract.balanceOf(sniperTrade.getAddress())
+    const tokenBalanceAfter = await _tokenIn.contract.balanceOf(await sniperTrade.getAddress())
     const ethBalanceAfter = await provider.getBalance(signer.address)
 
     const tokenBalanceDifference = tokenBalanceAfter - tokenBalanceBefore
@@ -194,7 +191,6 @@ const poolPriceHandler = async (_pool, _tokenIn, _tokenOut, _price0) => {
 
     console.table(data)
   }
-  isExecutingSwap = false
 }
 
 main()

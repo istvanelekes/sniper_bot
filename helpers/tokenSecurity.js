@@ -87,10 +87,12 @@ const main = async () => {
       
     console.log("Check Security info...\n")
     console.log(securityData)
-    console.log(securityData['0x3f5d8ac3fc4fe9629fdfd226e190da445dd9f910']['lp_holders'])
+    // console.log(securityData['0xa54dE13dA7b4A561db75A4232e8471DAbA71C17d']['lp_holders'])
 }
 
 module.exports = {
     fetchSecurityInfo,
     checkSecurity
 }
+
+main()
