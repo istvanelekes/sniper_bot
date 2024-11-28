@@ -1,12 +1,14 @@
 require("dotenv").config()
 require('./helpers/server')
 
-const { GoPlus, ErrorCode } = require('@goplus/sdk-node');
 const axios = require('axios');
 const ethers = require("ethers");
 
 const { getTokenAndContract, getPoolContract, calculatePrice } = require('./helpers/helpers')
 const { provider, signer, uniswap, sniperTrade } = require('./helpers/initialization')
+const { fetchSecurityInfo, checkSecurity } = require('./helpers/tokenSecurity')
+
+// Use this functions for testing
 const { loadAllPools, loadAllSwaps } = require('./helpers/testing')
 
 const config = require('./config.json')
@@ -15,13 +17,8 @@ const PRICE_MULTIPLIER = config.PROJECT_SETTINGS.PRICE_MULTIPLIER
 const WETH_AMOUNT = config.PROJECT_SETTINGS.WETH_AMOUNT
 const FUNDINGS = Object.values(config.FUNDINGS)
 
-let isExecuting = false
 let isExecutingSwap = false
 let watchList = {}
-
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
 
 const main = async () => {
 
@@ -31,11 +28,10 @@ const main = async () => {
 }
 
 const newPoolHandler = async (_token0, _token1, _fee, _tickSpacing, _pool) => {
-  if (isExecuting || (Object.keys(watchList).length > 7)) {
+  if (Object.keys(watchList).length > 7) {
     console.log("Token queue reached limit...\n")
     return
   }
-  isExecuting = true
 
   console.log(`Pool created with ${_token0} & ${_token1} at ${_pool} \n`)
 
@@ -48,28 +44,16 @@ const newPoolHandler = async (_token0, _token1, _fee, _tickSpacing, _pool) => {
     tokenWeth = _token1
     tokenNew = _token0
   } else {
-    isExecuting = false
     console.log("Waiting for new pools...\n")
     return
   }
 
-  let securityData = {result: {}}
-  while (Object.keys(securityData.result).length === 0) {
-    console.log(`Fetch Security info: ${tokenNew}`)
-    securityData = await fetchSecurityInfo(tokenNew)
-    isExecuting = false
-
-    // Sleep for 3 seconds
-    await sleep(3000)
-  }
-
-  isExecuting = true
+  const securityData = await fetchSecurityInfo(tokenNew)
   const tokenKey = tokenNew.toLowerCase()
 
-  if (securityData.result && securityData.result[tokenKey]) {
+  if (securityData && securityData[tokenKey]) {
     console.log("Check Security info...\n")
-    // console.log(securityData.result)
-    const tokenIsSecure = checkSecurity(securityData.result[tokenKey], tokenNew)
+    const tokenIsSecure = checkSecurity(securityData[tokenKey], tokenNew)
 
     if (tokenIsSecure) {
       try {
@@ -87,65 +71,7 @@ const newPoolHandler = async (_token0, _token1, _fee, _tickSpacing, _pool) => {
     }
   }
 
-  isExecuting = false
   console.log("Waiting for new pools...\n")
-}
-
-// Fetch security info from GoPlus
-const fetchSecurityInfo = async (token0) => {
-  let chainId = "8453";
-  
-  // It will only return 1 result for the 1st token address if not called getAccessToken before
-  let res = await GoPlus.tokenSecurity(chainId, [token0], 30);
-  if (res.code != ErrorCode.SUCCESS) {
-    console.error(res.message);
-  } else {
-    return res
-  } 
-}
-
-// Check security info from GoPlus
-// Analyze the Results: The API will return various security metrics and information about the token.
-function checkSecurity(_securityInfo, _tokenAddress) {
-
-  // use this for debug purposes
-  // console.log(_securityInfo)
-
-  // Check Contract Security
-  if (_securityInfo['is_open_source'] === '0' ||
-    _securityInfo['is_proxy'] === '1' ||
-    _securityInfo['is_mintable'] === '1' ||
-    _securityInfo['owner_change_balance'] === '1' ||
-    _securityInfo['hidden_owner'] === '1' ||
-    _securityInfo['selfdestruct'] === '1' ||
-    _securityInfo['external_call'] === '1' ||
-    _securityInfo['gas_abuse'] === '1'
-  ) {
-      return false
-  }
-
-  // Check Trading Security
-  if (_securityInfo['is_honeypot'] === '1' ||
-    // TODO: Check is_in_dex
-    _securityInfo['is_in_dex'] === '0' ||
-    _securityInfo['cannot_buy'] === '1' ||
-    _securityInfo['cannot_sell_all'] === '1' ||
-    _securityInfo['slippage_modifiable'] === '1' ||
-    _securityInfo['personal_slippage_modifiable'] === '1' ||
-    _securityInfo['is_blacklisted'] === '1' ||
-    _securityInfo['transfer_pausable'] === '1'
-  ) {
-      return false
-  }
-
-  // Check Info Security
-  if (_securityInfo['is_true_token'] === '0' ||
-    _securityInfo['is_airdrop_scam'] === '1'
-  ) {
-      return false
-  }
-
-  return true
 }
 
 /**
