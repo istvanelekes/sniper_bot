@@ -8,8 +8,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract SniperTrade {
     address public owner;
-    mapping(address => mapping(address => uint256)) private trades;
-    mapping(address => uint256) private prices;
 
     modifier onlyOwner() {
         require(
@@ -43,7 +41,8 @@ contract SniperTrade {
         address _tokenOut,
         uint24 _fee
     ) external onlyOwner {
-        trades[_tokenIn][_tokenOut] = _amount;
+        uint256 tokenInBalance = IERC20(_tokenIn).balanceOf(address(this));
+        require(tokenInBalance > _amount, "SniperTrade: token balance must be greater than amount");
 
         // Swap the amount of token0 and expect to get X amount of token1
         _swapOnV3(
@@ -70,7 +69,7 @@ contract SniperTrade {
         uint24 _fee
     ) external onlyOwner {
         uint256 amountIn = IERC20(_tokenIn).balanceOf(address(this));
-        // uint256 amountOut = trades[_tokenOut][_tokenIn];
+        require(amountIn > 0, "SniperTrade: sell amount must be greater than 0");
 
         // Swap the amount of token0 and expect to get X amount of token1
         _swapOnV3(
@@ -139,25 +138,4 @@ contract SniperTrade {
         // Perform swap
         ISwapRouter02(_router).exactInputSingle(params);
     }
-
-    // function _swapOnV2(
-    //     address _router,
-    //     address _tokenIn,
-    //     uint256 _amountIn,
-    //     address _tokenOut,
-    //     uint256 _amountOut,
-    //     uint24 _fee
-    // ) internal {
-    //     // Approve token to swap
-    //     IERC20(_tokenIn).approve(_router, _amountIn);
-
-    //     // Setup swap parameters
-    //     // address[] memory path = [_tokenIn, _tokenOut];
-    //     address[] memory path = new address[](2);
-    //     path[0] = _tokenIn;
-    //     path[1] = _tokenOut;
-
-    //     // Perform swap
-    //     IV2SwapRouter(_router).swapExactTokensForTokens(_amountIn, _amountOut, path, address(this));
-    // }
 }

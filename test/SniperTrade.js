@@ -84,6 +84,21 @@ describe("Sniper Trade", () => {
       transaction = await sniperTrade.connect(owner).sellToken(UNISWAP_V3_ROUTER, token1, weth, 500)
       await transaction.wait()
     })
+
+    it("Buy Token amount than max balance to be reverted", async () => {
+      const AMOUNT = ethers.parseUnits('91', 18)
+
+      let transaction = sniperTrade.connect(owner).buyToken(UNISWAP_V3_ROUTER, weth, AMOUNT, token1, 500)
+
+      await expect(transaction).to.be.reverted
+    })
+
+    it("Sell Token with zero balance to be reverted", async () => {
+
+      let transaction = sniperTrade.connect(owner).sellToken(UNISWAP_V3_ROUTER, token1, weth, 500)
+
+      await expect(transaction).to.be.reverted
+    })
   })
 
   describe("Withdraw tokens", () => {
@@ -92,7 +107,7 @@ describe("Sniper Trade", () => {
       beforeEach(async () => {
         await (await weth.connect(owner).transfer(
           await sniperTrade.getAddress(),
-          ethers.parseEther('40')
+          ethers.parseEther('1')
         )).wait()
       })
       
