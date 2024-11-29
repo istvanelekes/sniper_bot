@@ -10,6 +10,7 @@ const tokenSecurity = async (token0) => {
     let res = await GoPlus.tokenSecurity(chainId, [token0], 30);
     if (res.code != ErrorCode.SUCCESS) {
         console.error(res.message);
+        return {result: {}}
     } else {
         return res
     } 
@@ -17,12 +18,14 @@ const tokenSecurity = async (token0) => {
 
 const fetchSecurityInfo = async (token) => {
     let securityData = {result: {}}
+    let sleepMs = 3000
     while (Object.keys(securityData.result).length === 0) {
       console.log(`Fetch Security info: ${token}`)
       securityData = await tokenSecurity(token)
   
       // Sleep for 3 seconds
-      await sleep(3000)
+      await sleep(sleepMs)
+      sleepMs += 100
     }
 
     return securityData.result
@@ -83,16 +86,14 @@ function sleep(ms) {
 
 const main = async () => {
 
-    const securityData = await fetchSecurityInfo("0x3f5D8AC3fc4FE9629fDfd226e190DA445dD9F910")
+    const securityData = await fetchSecurityInfo("0x2819b0c207A0fA8fa01698CA243220dff9e46E86")
       
     console.log("Check Security info...\n")
     console.log(securityData)
-    // console.log(securityData['0xa54dE13dA7b4A561db75A4232e8471DAbA71C17d']['lp_holders'])
+    console.log(securityData['0x2819b0c207a0fa8fa01698ca243220dff9e46e86']['dex'])
 }
 
 module.exports = {
     fetchSecurityInfo,
     checkSecurity
 }
-
-main()

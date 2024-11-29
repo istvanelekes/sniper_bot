@@ -12,7 +12,7 @@ const { fetchSecurityInfo, checkSecurity } = require('./helpers/tokenSecurity')
 const { loadAllPools, loadAllSwaps } = require('./helpers/testing')
 
 const config = require('./config.json')
-const UNITS = config.PROJECT_SETTINGS.PRICE_UNITS
+const SNIPER_TRADE_ADDRESS = config.PROJECT_SETTINGS.SNIPER_TRADE_ADDRESS
 const PRICE_MULTIPLIER = config.PROJECT_SETTINGS.PRICE_MULTIPLIER
 const WETH_AMOUNT = config.PROJECT_SETTINGS.WETH_AMOUNT
 const FUNDINGS = Object.values(config.FUNDINGS)
@@ -55,6 +55,8 @@ const newPoolHandler = async (_token0, _token1, _fee, _tickSpacing, _pool) => {
     const tokenIsSecure = checkSecurity(securityData[tokenKey], tokenNew)
 
     if (tokenIsSecure) {
+      console.log(`Try to buy token: ${tokenNew}, fee: ${_fee}\n`)
+
       try {
         const amount = ethers.parseEther(WETH_AMOUNT)
         const success = await executeTrade(tokenWeth, tokenNew, amount, _fee)
@@ -83,7 +85,6 @@ const newPoolHandler = async (_token0, _token1, _fee, _tickSpacing, _pool) => {
  */
 async function executeTrade(_tokenIn, _tokenOut, _amount, _fee) {
   if (config.PROJECT_SETTINGS.isDeployed) {
-    console.log(`Sniper Trade address: ${await sniperTrade.getAddress()}\n`)
 
     if (_amount > 0) {
       const transaction = await sniperTrade.connect(signer).buyToken(
@@ -114,9 +115,6 @@ async function executeTrade(_tokenIn, _tokenOut, _amount, _fee) {
 const watchPoolPrice = async (_poolAddress, _fee, _tokenIn, _tokenOut) => {
   const { tokenIn, tokenOut } = await getTokenAndContract(_tokenIn, _tokenOut, provider)
 
-  const tokenOutBalance = await tokenOut.contract.balanceOf(sniperTrade)
-  console.log(`Watch ${tokenOut.symbol}, balance is: ${tokenOutBalance}`)
-
   const pool = await getPoolContract(_poolAddress, _fee, provider)
   console.log(`Uniswap Pool Address: ${await pool.contract.getAddress()}`)
   console.log(`Using ${tokenIn.symbol}/${tokenOut.symbol}\n`)
@@ -134,9 +132,6 @@ const poolPriceHandler = async (_pool, _tokenIn, _tokenOut, _price0) => {
   }
 
   const newPrice = await calculatePrice(_pool.contract, _tokenIn, _tokenOut)
-
-  // const newFPrice = Number(_newPrice).toFixed(UNITS)
-  // const oldFPrice = Number(_price0).toFixed(UNITS)
   const newFPrice = Number(newPrice)
   const oldFPrice = Number(_price0)
 
@@ -147,46 +142,40 @@ const poolPriceHandler = async (_pool, _tokenIn, _tokenOut, _price0) => {
   if (newFPrice >= oldFPrice * PRICE_MULTIPLIER) {
     console.log(`Bougth ${_tokenOut.symbol} at price: ${oldFPrice}`)
     console.log(`Sell ${_tokenOut.symbol} at price: ${newFPrice}`)
-    console.log(`-----------------------------------------\n`)
 
     // Fetch token balances before
-    const tokenBalanceBefore = await _tokenIn.contract.balanceOf(await sniperTrade.getAddress())
-    const ethBalanceBefore = await provider.getBalance(signer.address)
+    const tokenBalanceBefore = await _tokenIn.contract.balanceOf(SNIPER_TRADE_ADDRESS)
+    let checkToken = ""
 
     if (FUNDINGS.includes(_tokenIn.address)) {
       try {
         console.log(`Try to sell ${_tokenOut.symbol} `)
-
         const success = await executeTrade(_tokenOut.address, _tokenIn.address, 0, _pool.fee)
-        if (success) {
-          // TODO: remove listener after tokenOut is sold
-          if (tokenMap.delete(_tokenOut.address)) {
-            console.log(`Token removed from watch list ${_tokenOut.symbol} \n`)
-          }
-
-        }
+        // TODO: remove listener after tokenOut is sold
       } catch (error) {
+        checkToken = _tokenOut.address
         console.log(`Error on sell token: ${error} \n`)
+
+        console.log("---------------------------------------------------------")
+        console.log(`Sell manually ${_tokenOut.symbol}, address: ${_tokenOut.address}`)
+        console.log("---------------------------------------------------------\n")
+      }
+
+      if (tokenMap.delete(_tokenOut.address)) {
+        console.log(`Token removed from watch list ${_tokenOut.symbol} \n`)
       }
     }
 
     // Fetch token balances after
-    const tokenBalanceAfter = await _tokenIn.contract.balanceOf(await sniperTrade.getAddress())
-    const ethBalanceAfter = await provider.getBalance(signer.address)
-
+    const tokenBalanceAfter = await _tokenIn.contract.balanceOf(SNIPER_TRADE_ADDRESS)
     const tokenBalanceDifference = tokenBalanceAfter - tokenBalanceBefore
-    const ethBalanceDifference = ethBalanceBefore - ethBalanceAfter
 
     const data = {
-      'ETH Balance Before': ethers.formatUnits(ethBalanceBefore, 18),
-      'ETH Balance After': ethers.formatUnits(ethBalanceAfter, 18),
-      'ETH Spent (gas)': ethers.formatUnits(ethBalanceDifference.toString(), 18),
-      '-': {},
       'WETH Balance BEFORE': ethers.formatUnits(tokenBalanceBefore, _tokenIn.decimals),
       'WETH Balance AFTER': ethers.formatUnits(tokenBalanceAfter, _tokenIn.decimals),
       'WETH Gained/Lost': ethers.formatUnits(tokenBalanceDifference.toString(), _tokenIn.decimals),
       '-': {},
-      'Total Gained/Lost': `${ethers.formatUnits((tokenBalanceDifference - ethBalanceDifference).toString(), _tokenIn.decimals)}`
+      'Check token address': checkToken
     }
 
     console.table(data)
