@@ -33,10 +33,7 @@ const fetchSecurityInfo = async (token) => {
   
 // Check security info from GoPlus
 // Analyze the Results: The API will return various security metrics and information about the token.
-function checkSecurity(_securityInfo, _tokenAddress) {
-
-    // use this for debug purposes
-    // console.log(_securityInfo)
+function checkSecurity(_securityInfo) {
 
     // Check Contract Security
     if (_securityInfo['is_open_source'] === '0' ||
@@ -53,7 +50,7 @@ function checkSecurity(_securityInfo, _tokenAddress) {
 
     // Check Trading Security
     if (_securityInfo['is_honeypot'] === '1' ||
-        // TODO: Check is_in_dex
+        _securityInfo['honeypot_with_same_creator'] === '1' ||
         _securityInfo['is_in_dex'] === '0' ||
         _securityInfo['cannot_buy'] === '1' ||
         _securityInfo['cannot_sell_all'] === '1' ||
@@ -77,7 +74,24 @@ function checkSecurity(_securityInfo, _tokenAddress) {
         return false
     }
 
-    return true
+    let isLocked = false
+    const lpHolders = _securityInfo['lp_holders']
+
+    if (lpHolders && lpHolders.length > 0) {
+        lpHolders.forEach(holder => {
+            if (holder['is_locked'] === 1) {
+                isLocked = true
+            }
+        })
+    } else {
+        console.log("No LP holders...")
+    }
+
+    if (!isLocked) {
+        console.log("No Liquidity is locked...")
+    }
+
+    return isLocked
 }
 
 function sleep(ms) {
@@ -86,11 +100,10 @@ function sleep(ms) {
 
 const main = async () => {
 
-    const securityData = await fetchSecurityInfo("0x2819b0c207A0fA8fa01698CA243220dff9e46E86")
-      
-    console.log("Check Security info...\n")
+    const securityData = await fetchSecurityInfo("0x0940CA85653FA68a8AddBCf96d7De669349B8BdB")
+    checkSecurity(securityData["0x0940ca85653fa68a8addbcf96d7de669349b8bdb"])
+
     console.log(securityData)
-    console.log(securityData['0x2819b0c207a0fa8fa01698ca243220dff9e46e86']['dex'])
 }
 
 module.exports = {

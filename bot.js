@@ -52,7 +52,7 @@ const newPoolHandler = async (_token0, _token1, _fee, _tickSpacing, _pool) => {
 
   if (securityData && securityData[tokenKey]) {
     console.log("Check Security info...\n")
-    const tokenIsSecure = checkSecurity(securityData[tokenKey], tokenNew)
+    const tokenIsSecure = checkSecurity(securityData[tokenKey])
 
     if (tokenIsSecure) {
       console.log(`Try to buy token: ${tokenNew}, fee: ${_fee}\n`)
