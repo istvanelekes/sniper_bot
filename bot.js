@@ -1,6 +1,7 @@
 require("dotenv").config()
 require('./helpers/server')
 
+const chalk = require("chalk")
 const axios = require('axios');
 const ethers = require("ethers");
 
@@ -28,14 +29,14 @@ const main = async () => {
 
 const newPoolHandler = async (_token0, _token1, _fee, _tickSpacing, _pool) => {
   if (tokenMap.size > 7) {
-    console.log("Token queue reached limit...\n")
+    console.log(chalk.bgRed("Token queue reached limit...\n"))
     return
   }
   
   // Sleep for 60 seconds
   await sleep(60000)
 
-  console.log(`Pool created with ${_token0} & ${_token1} at ${_pool} \n`)
+  console.log(chalk.blue(`Pool created with ${_token0} & ${_token1} at ${_pool} \n`))
 
   let tokenWeth, tokenNew
 
@@ -62,7 +63,7 @@ const newPoolHandler = async (_token0, _token1, _fee, _tickSpacing, _pool) => {
       const holders = await checkLpHolders(securityInfo, tokenNew)
       console.log(`LP holders: ${holders} \n`)
 
-      console.log(`Try to buy token: ${tokenNew}, fee: ${_fee}\n`)
+      console.log(chalk.green(`Try to buy token: ${tokenNew}, fee: ${_fee}\n`))
 
       try {
         const amount = ethers.parseEther(WETH_AMOUNT)
@@ -72,10 +73,10 @@ const newPoolHandler = async (_token0, _token1, _fee, _tickSpacing, _pool) => {
           watchPoolPrice(_pool, _fee, tokenWeth, tokenNew)
         }
       } catch (error) {
-        console.log(`Error on buy token: ${error} \n`)
+        console.log(chalk.red(`Error on buy token: ${error} \n`))
       }
     } else {
-      console.log(`Token is not secure: ${tokenNew}\n`)
+      console.log(chalk.redBright(`Token is not secure: ${tokenNew}\n`))
     }
   }
 
@@ -112,7 +113,7 @@ async function executeTrade(_tokenIn, _tokenOut, _amount, _fee) {
       await transaction.wait(0)
     }
 
-    console.log(`Trade Complete... \n`)
+    console.log(chalk.green(`Trade Complete... \n`))
     return true
   }
   
@@ -123,8 +124,8 @@ const watchPoolPrice = async (_poolAddress, _fee, _tokenIn, _tokenOut) => {
   const { tokenIn, tokenOut } = await getTokenAndContract(_tokenIn, _tokenOut, provider)
 
   const pool = await getPoolContract(_poolAddress, _fee, provider)
-  console.log(`Uniswap Pool Address: ${await pool.contract.getAddress()}`)
-  console.log(`Using ${tokenIn.symbol}/${tokenOut.symbol}\n`)
+  console.log(chalk.blue(`Uniswap Pool Address: ${await pool.contract.getAddress()}`))
+  console.log(chalk.blue(`Using ${tokenIn.symbol}/${tokenOut.symbol}\n`))
 
   const price0 = await calculatePrice(pool.contract, tokenIn, tokenOut)
   console.log(`Calculated price: ${price0} \n`)
@@ -147,8 +148,8 @@ const poolPriceHandler = async (_pool, _tokenIn, _tokenOut, _price0) => {
   
   // Sell _tokenOut if price reached it's target amount
   if (newFPrice >= oldFPrice * PRICE_MULTIPLIER) {
-    console.log(`Bougth ${_tokenOut.symbol} at price: ${oldFPrice}`)
-    console.log(`Sell ${_tokenOut.symbol} at price: ${newFPrice}`)
+    console.log(chalk.blue(`Bougth ${_tokenOut.symbol} at price: ${oldFPrice}`))
+    console.log(chalk.blue(`Sell ${_tokenOut.symbol} at price: ${newFPrice}`))
 
     // Fetch token balances before
     const tokenBalanceBefore = await _tokenIn.contract.balanceOf(SNIPER_TRADE_ADDRESS)
@@ -156,16 +157,16 @@ const poolPriceHandler = async (_pool, _tokenIn, _tokenOut, _price0) => {
 
     if (FUNDINGS.includes(_tokenIn.address)) {
       try {
-        console.log(`Try to sell ${_tokenOut.symbol} `)
+        console.log(chalk.green(`Try to sell ${_tokenOut.symbol} `))
         const success = await executeTrade(_tokenOut.address, _tokenIn.address, 0, _pool.fee)
         // TODO: remove listener after tokenOut is sold
       } catch (error) {
         checkToken = _tokenOut.address
-        console.log(`Error on sell token: ${error} \n`)
+        console.log(chalk.red(`Error on sell token: ${error} \n`))
 
-        console.log("---------------------------------------------------------")
-        console.log(`Sell manually ${_tokenOut.symbol}, address: ${_tokenOut.address}`)
-        console.log("---------------------------------------------------------\n")
+        console.log(chalk.yellow("---------------------------------------------------------"))
+        console.log(chalk.yellow(`Sell manually ${_tokenOut.symbol}, address: ${_tokenOut.address}`))
+        console.log(chalk.yellow("---------------------------------------------------------\n"))
       }
 
       if (tokenMap.delete(_tokenOut.address)) {

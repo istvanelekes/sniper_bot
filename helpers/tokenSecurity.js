@@ -1,5 +1,7 @@
 const { GoPlus, ErrorCode } = require('@goplus/sdk-node')
 
+const chalk = require("chalk")
+
 const BLACK_LIST = ['PUMPNOTFUN', 'Nice']
 
 // Fetch security info from GoPlus
@@ -55,7 +57,7 @@ function checkSecurity(_securityInfo) {
     const result0 = securityList0.filter((key) => _securityInfo[key] === '0')
 
     if (result0.length > 0) {
-        console.log(`Security issues: ${result0}`)
+        console.log(chalk.redBright(`Security issues: ${result0}`))
         return false
     }
 
@@ -67,19 +69,19 @@ function checkSecurity(_securityInfo) {
     const result1 = securityList1.filter((key) => _securityInfo[key] === '1')
 
     if (result1.length > 0) {
-        console.log(`Security issues: ${result1}`)
+        console.log(chalk.redBright(`Security issues: ${result1}`))
         return false
     }
 
     const sellTax = Number(_securityInfo['sell_tax'])
     if (sellTax > 0.001) {
-        console.log(`Sell tax: ${sellTax}`)
+        console.log(chalk.redBright(`Sell tax: ${sellTax}`))
         return false
     }
 
     const buyTax = Number(_securityInfo['buy_tax'])
     if (buyTax > 0.001) {
-        console.log(`Buy tax: ${buyTax}`)
+        console.log(chalk.redBright(`Buy tax: ${buyTax}`))
         return false
     }
 
@@ -96,7 +98,7 @@ function sleep(ms) {
 }
 
 const main = async () => {
-    const tokenAddress = "0xbf61E121Fff31469f9D5CeB8c5c0Cc50fAaE195e"
+    const tokenAddress = "0x3c8700bb9ff3df2b4b7A21BeA9a6F33fc5A38b7A"
 
     const securityData = await fetchSecurityInfo(tokenAddress)
     console.log(securityData)
