@@ -71,6 +71,18 @@ function checkSecurity(_securityInfo) {
         return false
     }
 
+    const sellTax = Number(_securityInfo['sell_tax'])
+    if (sellTax > 0.001) {
+        console.log(`Sell tax: ${sellTax}`)
+        return false
+    }
+
+    const buyTax = Number(_securityInfo['buy_tax'])
+    if (buyTax > 0.001) {
+        console.log(`Buy tax: ${buyTax}`)
+        return false
+    }
+
     const tokenName = _securityInfo['token_name']
     if (BLACK_LIST.includes(tokenName)) {
         return false
@@ -84,7 +96,7 @@ function sleep(ms) {
 }
 
 const main = async () => {
-    const tokenAddress = "0x23a4b40275CDA7DA233C845eE86Aa7CC7C8660f7"
+    const tokenAddress = "0xbf61E121Fff31469f9D5CeB8c5c0Cc50fAaE195e"
 
     const securityData = await fetchSecurityInfo(tokenAddress)
     console.log(securityData)
@@ -102,5 +114,3 @@ module.exports = {
     checkLpHolders,
     sleep
 }
-
-main()
