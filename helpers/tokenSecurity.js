@@ -1,6 +1,6 @@
 const { GoPlus, ErrorCode } = require('@goplus/sdk-node')
 
-const BLACK_LIST = ['PUMPNOTFUN']
+const BLACK_LIST = ['PUMPNOTFUN', 'Nice']
 
 // Fetch security info from GoPlus
 const tokenSecurity = async (token0) => {
@@ -23,12 +23,28 @@ const fetchSecurityInfo = async (token) => {
       console.log(`Fetch Security info: ${token}`)
       securityData = await tokenSecurity(token)
   
-      // Sleep for 3 seconds
       await sleep(sleepMs)
       sleepMs += 100
     }
 
     return securityData.result
+}
+
+const checkLpHolders = async (_securityInfo, _token) => {
+    const lpHolderKey = 'lp_holder_count'
+    let lpHolders = Number(_securityInfo[lpHolderKey])
+
+    while (lpHolders < 1) {
+      console.log("Check LP holders...\n")
+      const securityData = await tokenSecurity(_token)
+      const tokenKey = _token.toLowerCase()
+      lpHolders = Number(securityData.result[tokenKey][lpHolderKey])
+      
+      // Sleep for 3 seconds
+      await sleep(3000)
+    }
+
+    return true
 }
   
 // Check security info from GoPlus
@@ -46,7 +62,7 @@ function checkSecurity(_securityInfo) {
     const securityList1 = [
         'is_proxy', 'is_mintable', 'owner_change_balance', 'hidden_owner', 'selfdestruct', 'external_call', 'gas_abuse',
         'is_honeypot', 'honeypot_with_same_creator', 'cannot_buy', 'cannot_sell_all', 'slippage_modifiable', 'personal_slippage_modifiable',
-        'is_blacklisted', 'transfer_pausable', 'is_airdrop_scam'
+        'is_blacklisted', 'transfer_pausable', 'is_airdrop_scam', 'trading_cooldown'
     ]
     const result1 = securityList1.filter((key) => _securityInfo[key] === '1')
 
@@ -60,25 +76,7 @@ function checkSecurity(_securityInfo) {
         return false
     }
 
-    let isLocked = false
-    const lpHolders = _securityInfo['lp_holders']
-
-    if (lpHolders && lpHolders.length > 0) {
-        lpHolders.forEach(holder => {
-            if (holder['is_locked'] === 1) {
-                isLocked = true
-            }
-        })
-    } else {
-        isLocked = true
-        console.log("No LP holders...")
-    }
-
-    if (!isLocked) {
-        console.log("No Liquidity is locked...")
-    }
-
-    return isLocked
+    return true
 }
 
 function sleep(ms) {
@@ -86,16 +84,23 @@ function sleep(ms) {
 }
 
 const main = async () => {
+    const tokenAddress = "0x23a4b40275CDA7DA233C845eE86Aa7CC7C8660f7"
 
-    const securityData = await fetchSecurityInfo("0x3f5D8AC3fc4FE9629fDfd226e190DA445dD9F910")
+    const securityData = await fetchSecurityInfo(tokenAddress)
     console.log(securityData)
 
-    checkSecurity(securityData["0x3f5d8ac3fc4fe9629fdfd226e190da445dd9f910"])
+    const securityInfo = securityData[tokenAddress.toLowerCase()]
+    checkSecurity(securityInfo)
+
+    const holders = await checkLpHolders(securityInfo, tokenAddress)
+    console.log(`LP holders: ${holders}`)
 }
 
 module.exports = {
     fetchSecurityInfo,
-    checkSecurity
+    checkSecurity,
+    checkLpHolders,
+    sleep
 }
 
 main()

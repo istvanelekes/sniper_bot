@@ -6,7 +6,7 @@ const ethers = require("ethers");
 
 const { getTokenAndContract, getPoolContract, calculatePrice } = require('./helpers/helpers')
 const { provider, signer, uniswap, sniperTrade } = require('./helpers/initialization')
-const { fetchSecurityInfo, checkSecurity } = require('./helpers/tokenSecurity')
+const { fetchSecurityInfo, checkSecurity, checkLpHolders, sleep } = require('./helpers/tokenSecurity')
 
 // Use this functions for testing
 const { loadAllPools, loadAllSwaps } = require('./helpers/testing')
@@ -31,6 +31,9 @@ const newPoolHandler = async (_token0, _token1, _fee, _tickSpacing, _pool) => {
     console.log("Token queue reached limit...\n")
     return
   }
+  
+  // Sleep for 60 seconds
+  await sleep(60000)
 
   console.log(`Pool created with ${_token0} & ${_token1} at ${_pool} \n`)
 
@@ -49,12 +52,16 @@ const newPoolHandler = async (_token0, _token1, _fee, _tickSpacing, _pool) => {
 
   const securityData = await fetchSecurityInfo(tokenNew)
   const tokenKey = tokenNew.toLowerCase()
+  const securityInfo = securityData[tokenKey] 
 
-  if (securityData && securityData[tokenKey]) {
-    console.log("Check Security info...\n")
-    const tokenIsSecure = checkSecurity(securityData[tokenKey])
+  if (securityData && securityInfo) {
+    console.log("Check Security info...")
+    const tokenIsSecure = checkSecurity(securityInfo)
 
     if (tokenIsSecure) {
+      const holders = await checkLpHolders(securityInfo, tokenNew)
+      console.log(`LP holders: ${holders} \n`)
+
       console.log(`Try to buy token: ${tokenNew}, fee: ${_fee}\n`)
 
       try {
