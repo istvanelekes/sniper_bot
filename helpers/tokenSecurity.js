@@ -35,37 +35,23 @@ const fetchSecurityInfo = async (token) => {
 // Analyze the Results: The API will return various security metrics and information about the token.
 function checkSecurity(_securityInfo) {
 
-    // Check Contract Security
-    if (_securityInfo['is_open_source'] === '0' ||
-        _securityInfo['is_proxy'] === '1' ||
-        _securityInfo['is_mintable'] === '1' ||
-        _securityInfo['owner_change_balance'] === '1' ||
-        _securityInfo['hidden_owner'] === '1' ||
-        _securityInfo['selfdestruct'] === '1' ||
-        _securityInfo['external_call'] === '1' ||
-        _securityInfo['gas_abuse'] === '1'
-    ) {
+    const securityList0 = ['is_open_source', 'is_in_dex', 'is_true_token']
+    const result0 = securityList0.filter((key) => _securityInfo[key] === '0')
+
+    if (result0.length > 0) {
+        console.log(`Security issues: ${result0}`)
         return false
     }
 
-    // Check Trading Security
-    if (_securityInfo['is_honeypot'] === '1' ||
-        _securityInfo['honeypot_with_same_creator'] === '1' ||
-        _securityInfo['is_in_dex'] === '0' ||
-        _securityInfo['cannot_buy'] === '1' ||
-        _securityInfo['cannot_sell_all'] === '1' ||
-        _securityInfo['slippage_modifiable'] === '1' ||
-        _securityInfo['personal_slippage_modifiable'] === '1' ||
-        _securityInfo['is_blacklisted'] === '1' ||
-        _securityInfo['transfer_pausable'] === '1'
-    ) {
-        return false
-    }
+    const securityList1 = [
+        'is_proxy', 'is_mintable', 'owner_change_balance', 'hidden_owner', 'selfdestruct', 'external_call', 'gas_abuse',
+        'is_honeypot', 'honeypot_with_same_creator', 'cannot_buy', 'cannot_sell_all', 'slippage_modifiable', 'personal_slippage_modifiable',
+        'is_blacklisted', 'transfer_pausable', 'is_airdrop_scam'
+    ]
+    const result1 = securityList1.filter((key) => _securityInfo[key] === '1')
 
-    // Check Info Security
-    if (_securityInfo['is_true_token'] === '0' ||
-        _securityInfo['is_airdrop_scam'] === '1'
-    ) {
+    if (result1.length > 0) {
+        console.log(`Security issues: ${result1}`)
         return false
     }
 
@@ -84,6 +70,7 @@ function checkSecurity(_securityInfo) {
             }
         })
     } else {
+        isLocked = true
         console.log("No LP holders...")
     }
 
@@ -100,13 +87,15 @@ function sleep(ms) {
 
 const main = async () => {
 
-    const securityData = await fetchSecurityInfo("0x0940CA85653FA68a8AddBCf96d7De669349B8BdB")
-    checkSecurity(securityData["0x0940ca85653fa68a8addbcf96d7de669349b8bdb"])
-
+    const securityData = await fetchSecurityInfo("0x3f5D8AC3fc4FE9629fDfd226e190DA445dD9F910")
     console.log(securityData)
+
+    checkSecurity(securityData["0x3f5d8ac3fc4fe9629fdfd226e190da445dd9f910"])
 }
 
 module.exports = {
     fetchSecurityInfo,
     checkSecurity
 }
+
+main()
