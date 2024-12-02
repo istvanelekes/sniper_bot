@@ -2,7 +2,7 @@ const { GoPlus, ErrorCode } = require('@goplus/sdk-node')
 
 const chalk = require("chalk")
 
-const BLACK_LIST = ['PUMPNOTFUN', 'Nice']
+const BLACK_LIST = ['PUMPNOTFUN', 'Nice', 'Akuma Inu']
 
 // Fetch security info from GoPlus
 const tokenSecurity = async (token0) => {
@@ -20,12 +20,12 @@ const tokenSecurity = async (token0) => {
 
 const fetchSecurityInfo = async (token) => {
     let securityData = {result: {}}
-    let sleepMs = 3000
-    while (Object.keys(securityData.result).length === 0) {
+    let sleepMs = 0
+    while (Object.keys(securityData.result).length === 0 && sleepMs < 1000) {
       console.log(`Fetch Security info: ${token}`)
       securityData = await tokenSecurity(token)
   
-      await sleep(sleepMs)
+      await sleep(3000 + sleepMs)
       sleepMs += 100
     }
 
@@ -35,18 +35,20 @@ const fetchSecurityInfo = async (token) => {
 const checkLpHolders = async (_securityInfo, _token) => {
     const lpHolderKey = 'lp_holder_count'
     let lpHolders = Number(_securityInfo[lpHolderKey])
+    let sleepMs = 0
 
-    while (lpHolders < 1) {
+    while (lpHolders < 1 && sleepMs < 1000) {
       console.log("Check LP holders...\n")
       const securityData = await tokenSecurity(_token)
       const tokenKey = _token.toLowerCase()
       lpHolders = Number(securityData.result[tokenKey][lpHolderKey])
       
       // Sleep for 3 seconds
-      await sleep(3000)
+      await sleep(3000 + sleepMs)
+      sleepMs += 100
     }
 
-    return true
+    return (lpHolders >= 1)
 }
   
 // Check security info from GoPlus
@@ -74,13 +76,13 @@ function checkSecurity(_securityInfo) {
     }
 
     const sellTax = Number(_securityInfo['sell_tax'])
-    if (sellTax > 0.001) {
+    if (sellTax > 0.0005) {
         console.log(chalk.redBright(`Sell tax: ${sellTax}`))
         return false
     }
 
     const buyTax = Number(_securityInfo['buy_tax'])
-    if (buyTax > 0.001) {
+    if (buyTax > 0.0005) {
         console.log(chalk.redBright(`Buy tax: ${buyTax}`))
         return false
     }
@@ -98,7 +100,7 @@ function sleep(ms) {
 }
 
 const main = async () => {
-    const tokenAddress = "0x3c8700bb9ff3df2b4b7A21BeA9a6F33fc5A38b7A"
+    const tokenAddress = "0x198F6496a3F67A2376f6FdFad145B4b51e3Fd63A"
 
     const securityData = await fetchSecurityInfo(tokenAddress)
     console.log(securityData)
