@@ -14,7 +14,8 @@ const { loadAllPools, loadAllSwaps } = require('./helpers/testing')
 
 const config = require('./config.json')
 const SNIPER_TRADE_ADDRESS = config.PROJECT_SETTINGS.SNIPER_TRADE_ADDRESS
-const PRICE_MULTIPLIER = config.PROJECT_SETTINGS.PRICE_MULTIPLIER
+const PRICE_UPPER_LIMIT = config.PROJECT_SETTINGS.PRICE_UPPER_LIMIT
+const PRICE_LOWER_LIMIT = config.PROJECT_SETTINGS.PRICE_LOWER_LIMIT
 const WETH_AMOUNT = config.PROJECT_SETTINGS.WETH_AMOUNT
 const FUNDINGS = Object.values(config.FUNDINGS)
 
@@ -142,12 +143,13 @@ const poolPriceHandler = async (_pool, _tokenIn, _tokenOut, _price0) => {
   const newPrice = await calculatePrice(_pool.contract, _tokenIn, _tokenOut)
   const newFPrice = Number(newPrice)
   const oldFPrice = Number(_price0)
+  const priceRatio = newFPrice / oldFPrice
 
   console.log(`Swap event: ${_tokenIn.symbol}/${_tokenOut.symbol}`)
-  console.log(`New price ratio: ${newFPrice / oldFPrice} \n`)
+  console.log(`New price ratio: ${priceRatio} \n`)
   
   // Sell _tokenOut if price reached it's target amount
-  if (newFPrice >= oldFPrice * PRICE_MULTIPLIER) {
+  if (priceRatio >= PRICE_UPPER_LIMIT || priceRatio <= PRICE_LOWER_LIMIT) {
     console.log(chalk.blue(`Bougth ${_tokenOut.symbol} at price: ${oldFPrice}`))
     console.log(chalk.blue(`Sell ${_tokenOut.symbol} at price: ${newFPrice}`))
 
