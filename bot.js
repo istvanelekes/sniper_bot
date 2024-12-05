@@ -35,7 +35,7 @@ const newPoolHandler = async (_token0, _token1, _fee, _tickSpacing, _pool) => {
   }
   
   // Sleep for 60 seconds
-  await sleep(60000)
+  // await sleep(60000)
 
   console.log(chalk.blue(`Pool created with ${_token0} & ${_token1} at ${_pool} \n`))
 
@@ -149,7 +149,7 @@ const poolPriceHandler = async (_pool, _tokenIn, _tokenOut, _price0) => {
   console.log(`New price ratio: ${priceRatio} \n`)
   
   // Sell _tokenOut if price reached it's target amount
-  if (priceRatio >= PRICE_UPPER_LIMIT || priceRatio <= PRICE_LOWER_LIMIT) {
+  if (priceRatio >= PRICE_UPPER_LIMIT) {
     console.log(chalk.blue(`Bougth ${_tokenOut.symbol} at price: ${oldFPrice}`))
     console.log(chalk.blue(`Sell ${_tokenOut.symbol} at price: ${newFPrice}`))
 

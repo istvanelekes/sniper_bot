@@ -2,6 +2,7 @@ const { GoPlus, ErrorCode } = require('@goplus/sdk-node')
 
 const chalk = require("chalk")
 
+const WHITE_LIST = ['paul', 'atkins', 'conan', 'trump', 'elvis', 'rlusd', 'gold', 'bitcoin']
 const BLACK_LIST = ['PUMPNOTFUN', 'Nice', 'Akuma Inu']
 
 // Fetch security info from GoPlus
@@ -55,7 +56,7 @@ const checkLpHolders = async (_securityInfo, _token) => {
 // Analyze the Results: The API will return various security metrics and information about the token.
 function checkSecurity(_securityInfo) {
 
-    const securityList0 = ['is_open_source', 'is_in_dex', 'is_true_token']
+    const securityList0 = ['is_open_source', 'is_true_token']
     const result0 = securityList0.filter((key) => _securityInfo[key] === '0')
 
     if (result0.length > 0) {
@@ -88,11 +89,23 @@ function checkSecurity(_securityInfo) {
     }
 
     const tokenName = _securityInfo['token_name']
+    const tokenSymbol = _securityInfo['token_symbol']
     if (BLACK_LIST.includes(tokenName)) {
         return false
     }
 
-    return true
+    for (let index = 0; index < WHITE_LIST.length; index++) {
+        const item = WHITE_LIST[index]
+        if (tokenName.toLowerCase().includes(item)) {
+            return true
+        }
+
+        if (tokenSymbol.toLowerCase().includes(item)) {
+            return true
+        }
+    }
+
+    return false
 }
 
 function sleep(ms) {
