@@ -2,8 +2,8 @@ require("dotenv").config()
 const ethers = require('ethers')
 
 const config = require('../config.json')
+const IUniswapV2Factory = require('@uniswap/v2-core/build/IUniswapV2Factory.json')
 const IUniswapV3Factory = require('@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Factory.sol/IUniswapV3Factory.json')
-const IQuoter = require('@uniswap/v3-periphery/artifacts/contracts/interfaces/IQuoterV2.sol/IQuoterV2.json')
 const ISwapRouter02 = require('@uniswap/swap-router-contracts/artifacts/contracts/interfaces/ISwapRouter02.sol/ISwapRouter02.json')
 
 let provider
@@ -18,10 +18,15 @@ if (config.PROJECT_SETTINGS.isLocal) {
 }
 
 // -- SETUP UNISWAP CONTRACTS -- //
-const uniswap = {
+const uniswapV2 = {
+  name: "Uniswap V2",
+  factory: new ethers.Contract(config.UNISWAP.FACTORY_V2, IUniswapV2Factory.abi, provider),
+  router: new ethers.Contract(config.UNISWAP.ROUTER_V2, ISwapRouter02.abi, provider)
+}
+
+const uniswapV3 = {
   name: "Uniswap V3",
   factory: new ethers.Contract(config.UNISWAP.FACTORY_V3, IUniswapV3Factory.abi, provider),
-  quoter: new ethers.Contract(config.UNISWAP.QUOTER_V3, IQuoter.abi, provider),
   router: new ethers.Contract(config.UNISWAP.ROUTER_V3, ISwapRouter02.abi, provider)
 }
 
@@ -31,6 +36,7 @@ const sniperTrade = new ethers.Contract(config.PROJECT_SETTINGS.SNIPER_TRADE_ADD
 module.exports = {
   provider,
   signer,
-  uniswap,
+  uniswapV2,
+  uniswapV3,
   sniperTrade
 }

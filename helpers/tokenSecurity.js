@@ -38,7 +38,7 @@ const checkLpHolders = async (_securityInfo, _token) => {
     let lpHolders = Number(_securityInfo[lpHolderKey])
     let sleepMs = 0
 
-    while (lpHolders < 1 && sleepMs < 1000) {
+    while (lpHolders === 0 && sleepMs < 1000) {
       console.log("Check LP holders...\n")
       const securityData = await tokenSecurity(_token)
       const tokenKey = _token.toLowerCase()

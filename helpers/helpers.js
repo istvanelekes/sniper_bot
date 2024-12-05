@@ -1,6 +1,7 @@
 const ethers = require("ethers")
 const Big = require('big.js')
 
+const IUniswapV2Pair = require("@uniswap/v2-core/build/IUniswapV2Pair.json")
 const IUniswapV3Pool = require("@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json")
 const IERC20 = require('@openzeppelin/contracts/build/contracts/ERC20.json')
 
@@ -34,6 +35,16 @@ async function getPoolContract(_poolAddress, _fee, _provider) {
     fee: _fee
   }
   return pool
+}
+
+async function getPairContract(_pairAddress, _provider) {
+  const pairContract = new ethers.Contract(_pairAddress, IUniswapV2Pair.abi, _provider)
+
+  const pair = {
+    contract: pairContract,
+    address: _pairAddress
+  }
+  return pair
 }
 
 async function calculatePrice(_pool, _token0, _token1) {

@@ -6,7 +6,7 @@ const axios = require('axios');
 const ethers = require("ethers");
 
 const { getTokenAndContract, getPoolContract, calculatePrice } = require('./helpers/helpers')
-const { provider, signer, uniswap, sniperTrade } = require('./helpers/initialization')
+const { provider, signer, uniswapV2, uniswapV3, sniperTrade } = require('./helpers/initialization')
 const { fetchSecurityInfo, checkSecurity, checkLpHolders, sleep } = require('./helpers/tokenSecurity')
 
 // Use this functions for testing
@@ -17,27 +17,43 @@ const SNIPER_TRADE_ADDRESS = config.PROJECT_SETTINGS.SNIPER_TRADE_ADDRESS
 const PRICE_UPPER_LIMIT = config.PROJECT_SETTINGS.PRICE_UPPER_LIMIT
 const PRICE_LOWER_LIMIT = config.PROJECT_SETTINGS.PRICE_LOWER_LIMIT
 const WETH_AMOUNT = config.PROJECT_SETTINGS.WETH_AMOUNT
+const QUEUE_SIZE = config.PROJECT_SETTINGS.QUEUE_SIZE
 const FUNDINGS = Object.values(config.FUNDINGS)
+
+const RouterV = {
+  V2: 0,
+  V3: 1
+}
 
 const tokenMap = new Map()
 
 const main = async () => {
 
-  uniswap.factory.on('PoolCreated', (token0, token1, fee, tickSpacing, pool) => newPoolHandler(token0, token1, fee, tickSpacing, pool))
+  // UniswapV2 new pair listener
+  uniswapV2.factory.on('PairCreated', (token0, token1, pair, index) => newPairHandler(token0, token1, pair))
+
+  // UniswapV3 new pool listener
+  uniswapV3.factory.on('PoolCreated', (token0, token1, fee, tickSpacing, pool) => newPoolHandler(token0, token1, fee, tickSpacing, pool))
 
   console.log("Waiting for new pools...\n")
 }
 
+const newPairHandler = async (_token0, _token1, _pair) => {
+  console.log(chalk.blueBright(`Pool V2 created with ${_token0} & ${_token1} at ${_pair} \n`))
+  eventHandler(RouterV.V2, _token0, _token1, _pair, 0)
+}
+
 const newPoolHandler = async (_token0, _token1, _fee, _tickSpacing, _pool) => {
-  if (tokenMap.size > 7) {
+  console.log(chalk.blue(`Pool V3 created with ${_token0} & ${_token1} at ${_pool} \n`))
+  eventHandler(RouterV.V3, _token0, _token1, _pool, _fee)
+}
+
+const eventHandler = async (_routerV, _token0, _token1, _pool, _fee) => {
+
+  if (tokenMap.size > QUEUE_SIZE) {
     console.log(chalk.bgRed("Token queue reached limit...\n"))
     return
   }
-  
-  // Sleep for 60 seconds
-  // await sleep(60000)
-
-  console.log(chalk.blue(`Pool created with ${_token0} & ${_token1} at ${_pool} \n`))
 
   let tokenWeth, tokenNew
 
@@ -64,14 +80,14 @@ const newPoolHandler = async (_token0, _token1, _fee, _tickSpacing, _pool) => {
       const holders = await checkLpHolders(securityInfo, tokenNew)
       console.log(`LP holders: ${holders} \n`)
 
-      console.log(chalk.green(`Try to buy token: ${tokenNew}, fee: ${_fee}\n`))
+      console.log(chalk.green(`Try to buy token: ${tokenNew} on Uniswap_V${_routerV + 2}\n`))
 
       try {
         const amount = ethers.parseEther(WETH_AMOUNT)
-        const success = await executeTrade(tokenWeth, tokenNew, amount, _fee)
+        const success = await buyToken(_routerV, tokenWeth, tokenNew, amount, _fee)
         if (success) {
           tokenMap.set(tokenNew, amount)
-          watchPoolPrice(_pool, _fee, tokenWeth, tokenNew)
+          // watchPoolPrice(_pool, _fee, tokenWeth, tokenNew)
         }
       } catch (error) {
         console.log(chalk.red(`Error on buy token: ${error} \n`))
@@ -87,37 +103,42 @@ const newPoolHandler = async (_token0, _token1, _fee, _tickSpacing, _pool) => {
 /**
  * This function performs the token exchange on Uniswap by calling the 
  * SniperTrade contract functions.
+ * @param _routerV Uniswap Router version(ex. V2, V3)
  * @param _tokenIn will be sold
  * @param _tokenOut will be bought
  * @param _amount 0 means we will sold all the balance of _tokenIn, otherwise a specific amount will be sold
  * @param _fee trading fee
  */
-async function executeTrade(_tokenIn, _tokenOut, _amount, _fee) {
+async function buyToken(_routerV, _tokenIn, _tokenOut, _amount, _fee) {
   if (config.PROJECT_SETTINGS.isDeployed) {
+    const transaction = await sniperTrade.connect(signer).buyToken(
+      _routerV,
+      _tokenIn,
+      _amount,
+      _tokenOut,
+      _fee
+    )
+    await transaction.wait(0)
 
-    if (_amount > 0) {
-      const transaction = await sniperTrade.connect(signer).buyToken(
-        config.UNISWAP.ROUTER_V3,
-        _tokenIn,
-        _amount,
-        _tokenOut,
-        _fee
-      )
-      await transaction.wait(0)
-    } else {
-      const transaction = await sniperTrade.connect(signer).sellToken(
-        config.UNISWAP.ROUTER_V3,
-        _tokenIn,
-        _tokenOut,
-        _fee
-      )
-      await transaction.wait(0)
-    }
-
-    console.log(chalk.green(`Trade Complete... \n`))
+    console.log(chalk.green(`Buy Complete... \n`))
     return true
   }
-  
+  return false
+}
+
+async function sellToken(_routerV, _tokenIn, _tokenOut, _fee) {
+  if (config.PROJECT_SETTINGS.isDeployed) {
+    const transaction = await sniperTrade.connect(signer).sellToken(
+      _routerV,
+      _tokenIn,
+      _tokenOut,
+      _fee
+    )
+    await transaction.wait(0)
+
+    console.log(chalk.green(`Sell Complete... \n`))
+    return true
+  }
   return false
 }
 
@@ -125,7 +146,7 @@ const watchPoolPrice = async (_poolAddress, _fee, _tokenIn, _tokenOut) => {
   const { tokenIn, tokenOut } = await getTokenAndContract(_tokenIn, _tokenOut, provider)
 
   const pool = await getPoolContract(_poolAddress, _fee, provider)
-  console.log(chalk.blue(`Uniswap Pool Address: ${await pool.contract.getAddress()}`))
+  console.log(chalk.blue(`UniswapV3 Pool Address: ${await pool.contract.getAddress()}`))
   console.log(chalk.blue(`Using ${tokenIn.symbol}/${tokenOut.symbol}\n`))
 
   const price0 = await calculatePrice(pool.contract, tokenIn, tokenOut)
@@ -160,7 +181,7 @@ const poolPriceHandler = async (_pool, _tokenIn, _tokenOut, _price0) => {
     if (FUNDINGS.includes(_tokenIn.address)) {
       try {
         console.log(chalk.green(`Try to sell ${_tokenOut.symbol} `))
-        const success = await executeTrade(_tokenOut.address, _tokenIn.address, 0, _pool.fee)
+        const success = await sellToken(RouterV.V3, _tokenOut.address, _tokenIn.address, _pool.fee)
         // TODO: remove listener after tokenOut is sold
       } catch (error) {
         checkToken = _tokenOut.address
