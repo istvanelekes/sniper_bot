@@ -1,7 +1,7 @@
 const { expect } = require("chai")
 const { ethers } = require("hardhat")
 
-const ERC20 = require('@openzeppelin/contracts/build/contracts/ERC20.json')
+const IERC20 = require('@openzeppelin/contracts/build/contracts/IERC20.json')
 const config = require('../config.json')
 
 describe("Sniper Trade", () => {
@@ -11,7 +11,6 @@ describe("Sniper Trade", () => {
   const TOKEN0 = "0x1315D6D10E92Ec9E3B3f47335e5FFf9aa0DD996D"
   const TOKEN1 = "0x27975B4c21Bea0d85c38e036C389385470716A2A"
   const WETH = "0x4200000000000000000000000000000000000006"
-  const UNISWAP_V3_ROUTER = "0x2626664c2603336E57B271c5C0b26F421741e481"
 
   beforeEach(async () => {
     const provider = await ethers.getDefaultProvider();
@@ -23,9 +22,9 @@ describe("Sniper Trade", () => {
     await sniperTrade.waitForDeployment()
 
     // Setup ERC20 (USDC) contract...
-    token0 = new ethers.Contract(TOKEN0, ERC20.abi, owner)
-    token1 = new ethers.Contract(TOKEN1, ERC20.abi, owner)
-    weth = new ethers.Contract(WETH, ERC20.abi, owner)
+    token0 = new ethers.Contract(TOKEN0, IERC20.abi, owner)
+    token1 = new ethers.Contract(TOKEN1, IERC20.abi, owner)
+    weth = new ethers.Contract(WETH, IERC20.abi, owner)
   })
 
   describe("Deployment", () => {
@@ -66,36 +65,55 @@ describe("Sniper Trade", () => {
       )).wait()
     })
 
-    it("Swap Token0 to Token1 ", async () => {
+    it("Swap on V2 Token0 to Token1 ", async () => {
 
       const balanceBefore = await weth.connect(owner).balanceOf(sniperTrade.getAddress())
 
-      let transaction = await sniperTrade.connect(owner).buyToken(UNISWAP_V3_ROUTER, weth, AMOUNT, token1, 500)
+      let transaction = await sniperTrade.connect(owner).buyToken(0, weth, AMOUNT, token1, 0)
       await transaction.wait()
 
       const balanceAfter = await weth.balanceOf(sniperTrade.getAddress())
       expect(balanceAfter).to.be.below(balanceBefore)
     })
 
-    it("Swap USDC to WETH and reverse", async () => {
-      let transaction = await sniperTrade.connect(owner).buyToken(UNISWAP_V3_ROUTER, weth, AMOUNT, token1, 500)
+    it("Swap on V3 Token0 to Token1 ", async () => {
+
+      const balanceBefore = await weth.connect(owner).balanceOf(sniperTrade.getAddress())
+
+      let transaction = await sniperTrade.connect(owner).buyToken(1, weth, AMOUNT, token1, 500)
       await transaction.wait()
 
-      transaction = await sniperTrade.connect(owner).sellToken(UNISWAP_V3_ROUTER, token1, weth, 500)
+      const balanceAfter = await weth.balanceOf(sniperTrade.getAddress())
+      expect(balanceAfter).to.be.below(balanceBefore)
+    })
+
+    it("Swap on V2 USDC to WETH and reverse", async () => {
+      let transaction = await sniperTrade.connect(owner).buyToken(0, weth, AMOUNT, token1, 0)
+      await transaction.wait()
+
+      transaction = await sniperTrade.connect(owner).sellToken(0, token1, weth, 0)
+      await transaction.wait()
+    })
+
+    it("Swap on V3 USDC to WETH and reverse", async () => {
+      let transaction = await sniperTrade.connect(owner).buyToken(1, weth, AMOUNT, token1, 500)
+      await transaction.wait()
+
+      transaction = await sniperTrade.connect(owner).sellToken(1, token1, weth, 500)
       await transaction.wait()
     })
 
     it("Buy Token amount than max balance to be reverted", async () => {
       const AMOUNT = ethers.parseUnits('91', 18)
 
-      let transaction = sniperTrade.connect(owner).buyToken(UNISWAP_V3_ROUTER, weth, AMOUNT, token1, 500)
+      let transaction = sniperTrade.connect(owner).buyToken(0, weth, AMOUNT, token1, 500)
 
       await expect(transaction).to.be.reverted
     })
 
     it("Sell Token with zero balance to be reverted", async () => {
 
-      let transaction = sniperTrade.connect(owner).sellToken(UNISWAP_V3_ROUTER, token1, weth, 500)
+      let transaction = sniperTrade.connect(owner).sellToken(0, token1, weth, 500)
 
       await expect(transaction).to.be.reverted
     })
