@@ -2,7 +2,7 @@ const { GoPlus, ErrorCode } = require('@goplus/sdk-node')
 
 const chalk = require("chalk")
 
-const WHITE_LIST = ['paul', 'atkins', 'conan', 'trump', 'elvis', 'rlusd', 'gold', 'bitcoin']
+const WHITE_LIST = ['paul', 'atkins', 'conan', 'trump', 'elvis', 'rlusd', 'gold', 'czar', 'david', 'sacks']
 const BLACK_LIST = ['PUMPNOTFUN', 'Nice', 'Akuma Inu']
 
 // Fetch security info from GoPlus
@@ -20,10 +20,10 @@ const tokenSecurity = async (token0) => {
 }
 
 const fetchSecurityInfo = async (token) => {
+    console.log(`Fetch Security info: ${token}`)
     let securityData = {result: {}}
     let sleepMs = 0
     while (Object.keys(securityData.result).length === 0 && sleepMs < 1000) {
-      console.log(`Fetch Security info: ${token}`)
       securityData = await tokenSecurity(token)
   
       await sleep(3000 + sleepMs)
@@ -96,11 +96,11 @@ function checkSecurity(_securityInfo) {
 
     for (let index = 0; index < WHITE_LIST.length; index++) {
         const item = WHITE_LIST[index]
-        if (tokenName.toLowerCase().includes(item)) {
+        if (tokenName && tokenName.toLowerCase().includes(item)) {
             return true
         }
 
-        if (tokenSymbol.toLowerCase().includes(item)) {
+        if (tokenSymbol && tokenSymbol.toLowerCase().includes(item)) {
             return true
         }
     }
