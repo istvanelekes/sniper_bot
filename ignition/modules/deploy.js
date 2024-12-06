@@ -1,9 +1,9 @@
 const { buildModule } = require("@nomicfoundation/hardhat-ignition/modules");
 
-const SniperTradeModule2 = buildModule("SniperTradeModule2", (m) => {
+const SniperTradeModule3 = buildModule("SniperTradeModule3", (m) => {
   const sniper = m.contract("SniperTrade");
 
   return { sniper };
 });
 
-module.exports = SniperTradeModule2;
+module.exports = SniperTradeModule3;
