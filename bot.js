@@ -80,7 +80,7 @@ const eventHandler = async (_routerV, _token0, _token1, _pool, _fee) => {
       const holders = await checkLpHolders(securityInfo, tokenNew)
       console.log(`LP holders: ${holders} \n`)
 
-      console.log(chalk.green(`Try to buy token: ${tokenNew} on Uniswap_V${_routerV + 2}\n`))
+      console.log(chalk.green(`Try to buy token: ${tokenNew} on Uniswap_V${_routerV + 2}, fee: ${_fee}`))
 
       try {
         const amount = ethers.parseEther(WETH_AMOUNT)
@@ -88,6 +88,10 @@ const eventHandler = async (_routerV, _token0, _token1, _pool, _fee) => {
         if (success) {
           tokenMap.set(tokenNew, amount)
           // watchPoolPrice(_pool, _fee, tokenWeth, tokenNew)
+
+          console.log(chalk.yellow("---------------------------------------------------------"))
+          console.log(chalk.yellow(`Sell token manually, address: ${tokenNew}`))
+          console.log(chalk.yellow("---------------------------------------------------------\n"))
         }
       } catch (error) {
         console.log(chalk.red(`Error on buy token: ${error} \n`))

@@ -1,0 +1,457 @@
+Waiting for new pools...
+
+Listening on 5009
+
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0x695FD81F7A5B57989a02d5b6c6E4385c0E818b75 at 0x58eE68d17922A765D2a7Ae422a62070e80840076 
+
+Fetch Security info: 0x695FD81F7A5B57989a02d5b6c6E4385c0E818b75
+Check Security info...
+LP holders: false 
+
+Try to buy token: 0x695FD81F7A5B57989a02d5b6c6E4385c0E818b75 on Uniswap_V2, fee: 0
+Buy Complete... 
+
+---------------------------------------------------------
+Sell token manually, address: 0x695FD81F7A5B57989a02d5b6c6E4385c0E818b75
+---------------------------------------------------------
+
+Waiting for new pools...
+
+Pool V3 created with 0x12077976f6C8F2cB2618D3f8FB1543727FC15947 & 0x4200000000000000000000000000000000000006 at 0x90Dd0A620ad9F69DEFAEc892b8DD520a5364740f 
+
+Fetch Security info: 0x12077976f6C8F2cB2618D3f8FB1543727FC15947
+Check Security info...
+Security issues: is_open_source
+Token is not secure: 0x12077976f6C8F2cB2618D3f8FB1543727FC15947
+
+Waiting for new pools...
+
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0xA35d14846c4B59EAdaE8589Ca5a0873D61b7A5D8 at 0x987227EC3712088d9c2021Ab9DaC3006061ADb64 
+
+Fetch Security info: 0xA35d14846c4B59EAdaE8589Ca5a0873D61b7A5D8
+Check Security info...
+Security issues: is_open_source
+Token is not secure: 0xA35d14846c4B59EAdaE8589Ca5a0873D61b7A5D8
+
+Waiting for new pools...
+
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0x53bB0F8787884d5160C0736E023B86a90Df5Bb7A at 0x89350Fc49d4BC121203d57F35274101d9f408dfF 
+
+Fetch Security info: 0x53bB0F8787884d5160C0736E023B86a90Df5Bb7A
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0x63e126504AC47ede90696C0B5c95BB6a4c8e2231 at 0x0bbB15afA536a6985319795BB6afa2A25C0Aa1C6 
+
+Fetch Security info: 0x63e126504AC47ede90696C0B5c95BB6a4c8e2231
+Check Security info...
+Token is not secure: 0x63e126504AC47ede90696C0B5c95BB6a4c8e2231
+
+Waiting for new pools...
+
+Check Security info...
+Token is not secure: 0x53bB0F8787884d5160C0736E023B86a90Df5Bb7A
+
+Waiting for new pools...
+
+Pool V2 created with 0x32464795B65741756786cb6725e0A41f7c1b14FF & 0x4200000000000000000000000000000000000006 at 0x658B55a4722e25e189924929BDDCc5D5E93a0B4D 
+
+Fetch Security info: 0x32464795B65741756786cb6725e0A41f7c1b14FF
+Check Security info...
+Security issues: is_open_source
+Token is not secure: 0x32464795B65741756786cb6725e0A41f7c1b14FF
+
+Waiting for new pools...
+
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0xbAFf2D0CC27c085A16f452c9DCa145C91278Cf9d at 0xD30724D2e019244273764Cb5f2fEA4683F26B9D2 
+
+Fetch Security info: 0xbAFf2D0CC27c085A16f452c9DCa145C91278Cf9d
+Check Security info...
+Security issues: is_open_source
+Token is not secure: 0xbAFf2D0CC27c085A16f452c9DCa145C91278Cf9d
+
+Waiting for new pools...
+
+Pool V3 created with 0x1BBDeB47B4bBF07B83C9343070926336835d56Ad & 0x4200000000000000000000000000000000000006 at 0x13cCE1a43a283b09f280568E240089270FE2753D 
+
+Fetch Security info: 0x1BBDeB47B4bBF07B83C9343070926336835d56Ad
+too many requests
+too many requests
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0x768a051609f7591D02FeB1cC2160166d6a5930F3 at 0x0f05D6Dc6a87B4C5ca374E5A0dDe2d88eB26a2C6 
+
+Fetch Security info: 0x768a051609f7591D02FeB1cC2160166d6a5930F3
+too many requests
+too many requests
+too many requests
+too many requests
+too many requests
+too many requests
+Check Security info...
+Security issues: is_open_source
+Token is not secure: 0x1BBDeB47B4bBF07B83C9343070926336835d56Ad
+
+Waiting for new pools...
+
+Check Security info...
+Token is not secure: 0x768a051609f7591D02FeB1cC2160166d6a5930F3
+
+Waiting for new pools...
+
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0xD7590b40B9b13841258E1B727C290d07e1024802 at 0xD3775A8ceFe0247a26f29633A4e9e348d8b25eC2 
+
+Fetch Security info: 0xD7590b40B9b13841258E1B727C290d07e1024802
+Check Security info...
+Token is not secure: 0xD7590b40B9b13841258E1B727C290d07e1024802
+
+Waiting for new pools...
+
+Pool V3 created with 0x2BC92445E8e827Ab2200FA057D0dA9D387292FfC & 0x4200000000000000000000000000000000000006 at 0xfe81769DFCc26ec0A12333282cD9f5f73a81353c 
+
+Fetch Security info: 0x2BC92445E8e827Ab2200FA057D0dA9D387292FfC
+Check Security info...
+Security issues: is_open_source
+Token is not secure: 0x2BC92445E8e827Ab2200FA057D0dA9D387292FfC
+
+Waiting for new pools...
+
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0xdB8A5d79d1463c551dbab0d13421f37E389D1630 at 0x1Fa1B64e675af5c3d9e062d06e440c2f8486ADd2 
+
+Fetch Security info: 0xdB8A5d79d1463c551dbab0d13421f37E389D1630
+Check Security info...
+Token is not secure: 0xdB8A5d79d1463c551dbab0d13421f37E389D1630
+
+Waiting for new pools...
+
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0x4C022912A23866745F3D9FC6F376140257b19348 at 0x1964e88747b95dB716DcDF027967C268CF433504 
+
+Fetch Security info: 0x4C022912A23866745F3D9FC6F376140257b19348
+Check Security info...
+Token is not secure: 0x4C022912A23866745F3D9FC6F376140257b19348
+
+Waiting for new pools...
+
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0xC8F6371bE3C01dd7E4CD2fb9bAA31776D022BDa5 at 0xBeBF4Bc9A177C5B3990dAf8f36646bE3F3129EA8 
+
+Fetch Security info: 0xC8F6371bE3C01dd7E4CD2fb9bAA31776D022BDa5
+too many requests
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0x9a8D12d3Ad023705f247550D319cf71eEbadf12c at 0x16b1cd021f8a31252c537B1290E78d16F47F0dAF 
+
+Fetch Security info: 0x9a8D12d3Ad023705f247550D319cf71eEbadf12c
+too many requests
+too many requests
+too many requests
+too many requests
+too many requests
+too many requests
+too many requests
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0xb0bbaa9226528338eF92Da77e0c72920274B8195 at 0x18e7A438BC49C84fAAd6577651597AdBB72c9e1e 
+
+Fetch Security info: 0xb0bbaa9226528338eF92Da77e0c72920274B8195
+Check Security info...
+LP holders: true 
+
+Try to buy token: 0xC8F6371bE3C01dd7E4CD2fb9bAA31776D022BDa5 on Uniswap_V2, fee: 0
+Check Security info...
+Security issues: hidden_owner,is_honeypot,honeypot_with_same_creator,is_blacklisted
+Token is not secure: 0xb0bbaa9226528338eF92Da77e0c72920274B8195
+
+Waiting for new pools...
+
+Buy Complete... 
+
+---------------------------------------------------------
+Sell token manually, address: 0xC8F6371bE3C01dd7E4CD2fb9bAA31776D022BDa5
+---------------------------------------------------------
+
+Waiting for new pools...
+
+Check Security info...
+Token is not secure: 0x9a8D12d3Ad023705f247550D319cf71eEbadf12c
+
+Waiting for new pools...
+
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0x836C03af777D35DF8aF505B06C18f67131b42A89 at 0x449e30c20665a832179B2B041331D384071497FB 
+
+Fetch Security info: 0x836C03af777D35DF8aF505B06C18f67131b42A89
+Check Security info...
+Token is not secure: 0x836C03af777D35DF8aF505B06C18f67131b42A89
+
+Waiting for new pools...
+
+Pool V3 created with 0x0ABdFD95D456F5b57E8D732fB50f63002f6e1A98 & 0x4200000000000000000000000000000000000006 at 0x2a6A9Bc96D43d5d9cFC2B6029B0AE1981233a55c 
+
+Fetch Security info: 0x0ABdFD95D456F5b57E8D732fB50f63002f6e1A98
+Pool V3 created with 0x4200000000000000000000000000000000000006 & 0xeB476e9aB6B1655860b3F40100678D0c1ceDB321 at 0xEf18eF67AB6C948cD2D87AB11433a9fd584eE669 
+
+Fetch Security info: 0xeB476e9aB6B1655860b3F40100678D0c1ceDB321
+too many requests
+too many requests
+too many requests
+too many requests
+too many requests
+too many requests
+too many requests
+too many requests
+too many requests
+too many requests
+too many requests
+too many requests
+too many requests
+too many requests
+too many requests
+too many requests
+too many requests
+too many requests
+too many requests
+Waiting for new pools...
+
+Waiting for new pools...
+
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0x543f4C42240e61e440d646A8A7335E27647024e9 at 0xC8c4aFb900C168271dA9F78Ab5805Ce5d733848f 
+
+Fetch Security info: 0x543f4C42240e61e440d646A8A7335E27647024e9
+Check Security info...
+Security issues: is_open_source
+Token is not secure: 0x543f4C42240e61e440d646A8A7335E27647024e9
+
+Waiting for new pools...
+
+Pool V3 created with 0x4200000000000000000000000000000000000006 & 0xA4f023D11940F434a5B5A6acc1d58506A0Ce9912 at 0x3c48F39e52aC5586Fb3e8c01c07b5447F25DF9e6 
+
+Fetch Security info: 0xA4f023D11940F434a5B5A6acc1d58506A0Ce9912
+too many requests
+too many requests
+too many requests
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0xA77B029d8FB48c2C0C04C070893250AC60e1c865 at 0xDD8E4aCD71fa7c96B84253065F0Fe47dD787E3Ea 
+
+Fetch Security info: 0xA77B029d8FB48c2C0C04C070893250AC60e1c865
+too many requests
+too many requests
+too many requests
+Check Security info...
+Token is not secure: 0xA4f023D11940F434a5B5A6acc1d58506A0Ce9912
+
+Waiting for new pools...
+
+Check Security info...
+Security issues: is_open_source
+Token is not secure: 0xA77B029d8FB48c2C0C04C070893250AC60e1c865
+
+Waiting for new pools...
+
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0x8A0383A1c0e2262E11B69A26Cf86286641f8273b at 0x6C3d1B3bD8Cb2e1AD22EFE7E0307D85eD14fC9f9 
+
+Fetch Security info: 0x8A0383A1c0e2262E11B69A26Cf86286641f8273b
+Check Security info...
+Security issues: is_open_source
+Token is not secure: 0x8A0383A1c0e2262E11B69A26Cf86286641f8273b
+
+Waiting for new pools...
+
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0x84216F5e5E54a0AF7c69C64d4Cdd8f6FCC92d949 at 0x48351Ec0bd406ff7Dce88bBcA5409B257f0F58cC 
+
+Fetch Security info: 0x84216F5e5E54a0AF7c69C64d4Cdd8f6FCC92d949
+too many requests
+too many requests
+too many requests
+too many requests
+too many requests
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0x572408E3B445834Ac76727a7cc87f4F9eeE49Fa4 at 0x5C1EF080C2bC0b7452cC058Fd27Eff20e77933ce 
+
+Fetch Security info: 0x572408E3B445834Ac76727a7cc87f4F9eeE49Fa4
+too many requests
+too many requests
+too many requests
+too many requests
+too many requests
+Check Security info...
+Token is not secure: 0x572408E3B445834Ac76727a7cc87f4F9eeE49Fa4
+
+Waiting for new pools...
+
+Check Security info...
+Token is not secure: 0x84216F5e5E54a0AF7c69C64d4Cdd8f6FCC92d949
+
+Waiting for new pools...
+
+Pool V2 created with 0x40E4405728fD83Be6daF78FC9414ba4E7B98196a & 0x4200000000000000000000000000000000000006 at 0x105013b02f15Ca957a6Bb576231f75513955c6f0 
+
+Fetch Security info: 0x40E4405728fD83Be6daF78FC9414ba4E7B98196a
+Check Security info...
+Security issues: is_open_source
+Token is not secure: 0x40E4405728fD83Be6daF78FC9414ba4E7B98196a
+
+Waiting for new pools...
+
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0x56f5523E482E83E182479389FCfe490ff190e811 at 0x47EE00738Ed014Aa9f2FfdB0200A0145426ffb05 
+
+Fetch Security info: 0x56f5523E482E83E182479389FCfe490ff190e811
+too many requests
+too many requests
+too many requests
+too many requests
+too many requests
+Check Security info...
+Security issues: is_open_source
+Token is not secure: 0x56f5523E482E83E182479389FCfe490ff190e811
+
+Waiting for new pools...
+
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0x5e4dB5020Dc386eA9469f20650703aCD38c296d1 at 0xc31852dB4552E4e0032497C3036e9F78cD490Cb1 
+
+Fetch Security info: 0x5e4dB5020Dc386eA9469f20650703aCD38c296d1
+Check Security info...
+Security issues: is_open_source
+Token is not secure: 0x5e4dB5020Dc386eA9469f20650703aCD38c296d1
+
+Waiting for new pools...
+
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0xEb32F7f13794020BEb190FF6Fb223B86699d7279 at 0x22658C3aFD08135780e1124b078c521b24449dCe 
+
+Fetch Security info: 0xEb32F7f13794020BEb190FF6Fb223B86699d7279
+too many requests
+too many requests
+too many requests
+too many requests
+too many requests
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0x4b376D175F26C4B67B4B95814874298ca16aE353 at 0xC8A4625B0c881aec3c6D46D2F682cEf8F28d6734 
+
+Fetch Security info: 0x4b376D175F26C4B67B4B95814874298ca16aE353
+too many requests
+Check Security info...
+Token is not secure: 0xEb32F7f13794020BEb190FF6Fb223B86699d7279
+
+Waiting for new pools...
+
+Check Security info...
+Security issues: is_open_source
+Token is not secure: 0x4b376D175F26C4B67B4B95814874298ca16aE353
+
+Waiting for new pools...
+
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0xbca6B2af73492329d58847bE7C39645e031cE96D at 0x0F6FaCAf190a017754BB9B5518757a8fdE379D33 
+
+Fetch Security info: 0xbca6B2af73492329d58847bE7C39645e031cE96D
+Check Security info...
+Token is not secure: 0xbca6B2af73492329d58847bE7C39645e031cE96D
+
+Waiting for new pools...
+
+Pool V3 created with 0x31153b93b47fbA113B5895Bf57702038d8E500eb & 0x4200000000000000000000000000000000000006 at 0xFe1b07c82922bE00B07C2531f197957c600d51d5 
+
+Fetch Security info: 0x31153b93b47fbA113B5895Bf57702038d8E500eb
+Check Security info...
+Token is not secure: 0x31153b93b47fbA113B5895Bf57702038d8E500eb
+
+Waiting for new pools...
+
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0x43037e1377e33ACD7cA33C0C56212fD169d7A6e5 at 0x6D3D65B084699a451C44d9313c58afdd168202D5 
+
+Fetch Security info: 0x43037e1377e33ACD7cA33C0C56212fD169d7A6e5
+Check Security info...
+Security issues: is_open_source
+Token is not secure: 0x43037e1377e33ACD7cA33C0C56212fD169d7A6e5
+
+Waiting for new pools...
+
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0xbCe5302F63c0e5505C260Fb4a91426ba8D81C162 at 0xC9f1ba45f6668427422c9173745011ac801e3A18 
+
+Fetch Security info: 0xbCe5302F63c0e5505C260Fb4a91426ba8D81C162
+Check Security info...
+Security issues: is_open_source
+Token is not secure: 0xbCe5302F63c0e5505C260Fb4a91426ba8D81C162
+
+Waiting for new pools...
+
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0xB7a09afAE88476970F68c82718E4FE9B45B3f39b at 0xD4710A73e2d963426B25183fbD8fB2b576dD2dff 
+
+Fetch Security info: 0xB7a09afAE88476970F68c82718E4FE9B45B3f39b
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0x7A44fCe5D2A6391F21eD53096a3adBe5FC8F212c at 0x05Ab57260eC545f013A291bfaaEB053D6B8e1ffB 
+
+Fetch Security info: 0x7A44fCe5D2A6391F21eD53096a3adBe5FC8F212c
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0x82a1497FDfCc584553DE4C0b39C13b1fA448770d at 0x04D182D3038AF0f34593519A012AcC5d84a47c58 
+
+Fetch Security info: 0x82a1497FDfCc584553DE4C0b39C13b1fA448770d
+Check Security info...
+Token is not secure: 0xB7a09afAE88476970F68c82718E4FE9B45B3f39b
+
+Waiting for new pools...
+
+Check Security info...
+Token is not secure: 0x7A44fCe5D2A6391F21eD53096a3adBe5FC8F212c
+
+Waiting for new pools...
+
+Check Security info...
+Security issues: is_open_source
+Token is not secure: 0x82a1497FDfCc584553DE4C0b39C13b1fA448770d
+
+Waiting for new pools...
+
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0x5c1E8f7d320cDd4f8Cfc4CBCAfce89f2f170C128 at 0x037A1A7466192F0512ed19FE3cd5aF5Cd50D6baF 
+
+Fetch Security info: 0x5c1E8f7d320cDd4f8Cfc4CBCAfce89f2f170C128
+Check Security info...
+Token is not secure: 0x5c1E8f7d320cDd4f8Cfc4CBCAfce89f2f170C128
+
+Waiting for new pools...
+
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0x4b1cbD798655afE7F2b25d1095ab058E8158486D at 0x218815e4a2E18C43d36c3aFa299b477B45571701 
+
+Fetch Security info: 0x4b1cbD798655afE7F2b25d1095ab058E8158486D
+Check Security info...
+Security issues: is_open_source
+Token is not secure: 0x4b1cbD798655afE7F2b25d1095ab058E8158486D
+
+Waiting for new pools...
+
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0x6DcCd7ad3cBa3D13B3437BaDd86fFEB09e69cEC2 at 0xC6c362ECB280909c8b96803d28cf1Af754938704 
+
+Fetch Security info: 0x6DcCd7ad3cBa3D13B3437BaDd86fFEB09e69cEC2
+Check Security info...
+Security issues: is_open_source
+Token is not secure: 0x6DcCd7ad3cBa3D13B3437BaDd86fFEB09e69cEC2
+
+Waiting for new pools...
+
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0xD3F329949DBCfdd03eE2Be4c194AE7cE6f832eDd at 0x740716435343E84E217562Ac22dCde1CAD349718 
+
+Fetch Security info: 0xD3F329949DBCfdd03eE2Be4c194AE7cE6f832eDd
+Check Security info...
+Security issues: is_open_source
+Token is not secure: 0xD3F329949DBCfdd03eE2Be4c194AE7cE6f832eDd
+
+Waiting for new pools...
+
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0xbaa94d1105E2bF425A4392083A8763760b38342C at 0xb756c01504223E6e6CaC3f4A4D4FFe0cbd935b83 
+
+Fetch Security info: 0xbaa94d1105E2bF425A4392083A8763760b38342C
+Check Security info...
+Security issues: is_open_source
+Token is not secure: 0xbaa94d1105E2bF425A4392083A8763760b38342C
+
+Waiting for new pools...
+
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0x4DdA56E8EC05281Ed6836DB49639BC71bA30F201 at 0xe25aa90fFd960D49A51286C3a88d0a8D9D63cF0D 
+
+Fetch Security info: 0x4DdA56E8EC05281Ed6836DB49639BC71bA30F201
+Check Security info...
+Security issues: is_open_source
+Token is not secure: 0x4DdA56E8EC05281Ed6836DB49639BC71bA30F201
+
+Waiting for new pools...
+
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0xF5DF2Fa2B20085CED01B08eb41665868532ad274 at 0x78eE33C9e6c4a31Cbf8c1Ec1936FEf71079c38c9 
+
+Fetch Security info: 0xF5DF2Fa2B20085CED01B08eb41665868532ad274
+Check Security info...
+Security issues: is_open_source
+Token is not secure: 0xF5DF2Fa2B20085CED01B08eb41665868532ad274
+
+Waiting for new pools...
+
+Pool V2 created with 0x4200000000000000000000000000000000000006 & 0x802195d83f7Ffdde31764c47A3dfBFa5C262AD9e at 0x4f9Da7bD858634e8854bca887BD891Ac920CBE1a 
+
+Fetch Security info: 0x802195d83f7Ffdde31764c47A3dfBFa5C262AD9e
+Check Security info...
+Token is not secure: 0x802195d83f7Ffdde31764c47A3dfBFa5C262AD9e
+
+Waiting for new pools...
+
