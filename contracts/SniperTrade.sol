@@ -127,7 +127,7 @@ contract SniperTrade {
         uint deadline = block.timestamp + 300;
 
         // Perform swap
-        ISwapRouter02(ROUTER_V2).swapExactTokensForTokensSupportingFeeOnTransferTokens(
+        ISwapRouter02(ROUTER_V2).swapExactTokensForTokens(
             _amountIn,
             _amountOut,
             path,
