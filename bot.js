@@ -30,7 +30,7 @@ const tokenMap = new Map()
 const main = async () => {
 
   // UniswapV2 new pair listener
-  uniswapV2.factory.on('PairCreated', (token0, token1, pair, index) => newPairHandler(token0, token1, pair))
+  // uniswapV2.factory.on('PairCreated', (token0, token1, pair, index) => newPairHandler(token0, token1, pair))
 
   // UniswapV3 new pool listener
   uniswapV3.factory.on('PoolCreated', (token0, token1, fee, tickSpacing, pool) => newPoolHandler(token0, token1, fee, tickSpacing, pool))
@@ -78,23 +78,22 @@ const eventHandler = async (_routerV, _token0, _token1, _pool, _fee) => {
 
     if (tokenIsSecure) {
       const holders = await checkLpHolders(securityInfo, tokenNew)
+      const amount = ethers.parseEther(WETH_AMOUNT)
       console.log(`LP holders: ${holders} \n`)
 
       console.log(chalk.green(`Try to buy token: ${tokenNew} on Uniswap_V${_routerV + 2}, fee: ${_fee}`))
 
       try {
-        const amount = ethers.parseEther(WETH_AMOUNT)
-        const success = await buyToken(_routerV, tokenWeth, tokenNew, amount, _fee)
-        if (success) {
-          tokenMap.set(tokenNew, amount)
-          // watchPoolPrice(_pool, _fee, tokenWeth, tokenNew)
-
-          console.log(chalk.yellow("---------------------------------------------------------"))
-          console.log(chalk.yellow(`Sell token manually, address: ${tokenNew}`))
-          console.log(chalk.yellow("---------------------------------------------------------\n"))
-        }
+        await buyToken(_routerV, tokenWeth, tokenNew, amount, _fee)
       } catch (error) {
         console.log(chalk.red(`Error on buy token: ${error} \n`))
+      } finally {
+        tokenMap.set(tokenNew, amount)
+        // watchPoolPrice(_pool, _fee, tokenWeth, tokenNew)
+
+        console.log(chalk.yellow("---------------------------------------------------------"))
+        console.log(chalk.yellow(`Sell token manually, address: ${tokenNew}`))
+        console.log(chalk.yellow("---------------------------------------------------------\n"))
       }
     } else {
       console.log(chalk.redBright(`Token is not secure: ${tokenNew}\n`))
@@ -125,9 +124,7 @@ async function buyToken(_routerV, _tokenIn, _tokenOut, _amount, _fee) {
     await transaction.wait(0)
 
     console.log(chalk.green(`Buy Complete... \n`))
-    return true
   }
-  return false
 }
 
 async function sellToken(_routerV, _tokenIn, _tokenOut, _fee) {

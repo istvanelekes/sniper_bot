@@ -2,7 +2,7 @@ const { GoPlus, ErrorCode } = require('@goplus/sdk-node')
 
 const chalk = require("chalk")
 
-const WHITE_LIST = ['paul', 'atkins', 'conan', 'trump', 'elvis', 'rlusd', 'gold', 'czar', 'david', 'sacks']
+const WHITE_LIST = ['trump', 'elvis', 'presley', 'rlusd', 'gold', 'czar', 'david', 'sacks', 'nast', 'zenet', 'ethereal', 'mind', 'luigi', 'maneki', 'elon', 'richest']
 const BLACK_LIST = ['PUMPNOTFUN', 'Nice', 'Akuma Inu']
 
 // Fetch security info from GoPlus
