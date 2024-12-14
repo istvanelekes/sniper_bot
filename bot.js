@@ -3,6 +3,7 @@ require('./helpers/server')
 
 const chalk = require("chalk")
 const axios = require('axios');
+const moment = require('moment');
 const ethers = require("ethers");
 
 const { getTokenAndContract, getPoolContract, calculatePrice } = require('./helpers/helpers')
@@ -26,6 +27,7 @@ const RouterV = {
 }
 
 const tokenMap = new Map()
+const tokenTimerMap = new Map()
 
 const main = async () => {
 
@@ -81,20 +83,21 @@ const eventHandler = async (_routerV, _token0, _token1, _pool, _fee) => {
       const amount = ethers.parseEther(WETH_AMOUNT)
       console.log(`LP holders: ${holders} \n`)
 
-      console.log(chalk.green(`Try to buy token: ${tokenNew} on Uniswap_V${_routerV + 2}, fee: ${_fee}`))
+      watchPoolSwaps(_pool, _fee, tokenWeth, tokenNew)
 
-      try {
-        await buyToken(_routerV, tokenWeth, tokenNew, amount, _fee)
-      } catch (error) {
-        console.log(chalk.red(`Error on buy token: ${error} \n`))
-      } finally {
-        tokenMap.set(tokenNew, amount)
-        // watchPoolPrice(_pool, _fee, tokenWeth, tokenNew)
+      // console.log(chalk.green(`Try to buy token: ${tokenNew} on Uniswap_V${_routerV + 2}, fee: ${_fee}`))
+      // try {
+      //   await buyToken(_routerV, tokenWeth, tokenNew, amount, _fee)
+      // } catch (error) {
+      //   console.log(chalk.red(`Error on buy token: ${error} \n`))
+      // } finally {
+      //   tokenMap.set(tokenNew, amount)
+      //   // watchPoolPrice(_pool, _fee, tokenWeth, tokenNew)
 
-        console.log(chalk.yellow("---------------------------------------------------------"))
-        console.log(chalk.yellow(`Sell token manually, address: ${tokenNew}`))
-        console.log(chalk.yellow("---------------------------------------------------------\n"))
-      }
+      //   console.log(chalk.yellow("---------------------------------------------------------"))
+      //   console.log(chalk.yellow(`Sell token manually, address: ${tokenNew}`))
+      //   console.log(chalk.yellow("---------------------------------------------------------\n"))
+      // }
     } else {
       console.log(chalk.redBright(`Token is not secure: ${tokenNew}\n`))
     }
@@ -141,6 +144,58 @@ async function sellToken(_routerV, _tokenIn, _tokenOut, _fee) {
     return true
   }
   return false
+}
+
+const watchPoolSwaps = async (_poolAddress, _fee, _tokenIn, _tokenOut) => {
+  const { tokenIn, tokenOut } = await getTokenAndContract(_tokenIn, _tokenOut, provider)
+
+  const pool = await getPoolContract(_poolAddress, _fee, provider)
+  console.log(chalk.blue(`UniswapV3 Pool Address: ${await pool.contract.getAddress()}`))
+  console.log(chalk.blue(`Using ${tokenIn.symbol}/${tokenOut.symbol}\n`))
+
+  tokenMap.set(_tokenOut, 1)
+  tokenTimerMap.set(_tokenOut, moment().add(2, 'minutes'))
+
+  pool.contract.on('Swap', () => poolSwapsHandler(pool, tokenIn, tokenOut))
+}
+
+const poolSwapsHandler = async (_pool, _tokenIn, _tokenOut) => {
+
+  if (!tokenMap.has(_tokenOut.address)) {
+    return 
+  }
+
+  const swapCount = tokenMap.get(_tokenOut.address)
+  console.log(`${swapCount}. Swap event: ${_tokenIn.symbol}/${_tokenOut.symbol}`)
+
+  const expireIn = tokenTimerMap.get(_tokenOut.address)
+  if (moment().isAfter(expireIn)) {
+    console.log(chalk.redBright(`Token ${_tokenOut.symbol} expired`))
+    tokenMap.delete(_tokenOut.address)
+    tokenTimerMap.delete(_tokenOut.address)
+
+    return
+  }
+
+  if (swapCount > 5) {
+
+    tokenMap.delete(_tokenOut.address)
+    tokenTimerMap.delete(_tokenOut.address)
+
+    try {
+      console.log(chalk.green(`Try to buy ${_tokenOut.symbol} `))
+      const amount = ethers.parseEther(WETH_AMOUNT)
+      await buyToken(RouterV.V3, _tokenIn.address, _tokenOut.address, amount, _pool.fee)
+    } catch (error) {
+      console.log(chalk.red(`Error on buy token: ${error} \n`))
+    } finally {
+      console.log(chalk.yellow("---------------------------------------------------------"))
+      console.log(chalk.yellow(`Sell token manually, address: ${_tokenOut.address}`))
+      console.log(chalk.yellow("---------------------------------------------------------\n"))
+    }
+  } else {
+    tokenMap.set(_tokenOut.address, swapCount + 1)
+  }
 }
 
 const watchPoolPrice = async (_poolAddress, _fee, _tokenIn, _tokenOut) => {

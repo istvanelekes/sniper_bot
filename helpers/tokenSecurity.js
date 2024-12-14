@@ -23,7 +23,7 @@ const fetchSecurityInfo = async (token) => {
     console.log(`Fetch Security info: ${token}`)
     let securityData = {result: {}}
     let sleepMs = 0
-    while (Object.keys(securityData.result).length === 0 && sleepMs < 1000) {
+    while (Object.keys(securityData.result).length === 0 && sleepMs < 700) {
       securityData = await tokenSecurity(token)
   
       await sleep(3000 + sleepMs)
@@ -94,18 +94,7 @@ function checkSecurity(_securityInfo) {
         return false
     }
 
-    for (let index = 0; index < WHITE_LIST.length; index++) {
-        const item = WHITE_LIST[index]
-        if (tokenName && tokenName.toLowerCase().includes(item)) {
-            return true
-        }
-
-        if (tokenSymbol && tokenSymbol.toLowerCase().includes(item)) {
-            return true
-        }
-    }
-
-    return false
+    return true
 }
 
 function sleep(ms) {
