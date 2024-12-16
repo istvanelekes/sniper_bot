@@ -20,13 +20,13 @@ const tokenSecurity = async (token0) => {
 }
 
 const fetchSecurityInfo = async (token) => {
-    console.log(`Fetch Security info: ${token}`)
+    console.log(chalk.magenta(`Fetch Security info: ${token}`))
     let securityData = {result: {}}
     let sleepMs = 0
-    while (Object.keys(securityData.result).length === 0 && sleepMs < 700) {
+    while (Object.keys(securityData.result).length === 0 && sleepMs < 400) {
       securityData = await tokenSecurity(token)
   
-      await sleep(3000 + sleepMs)
+      await sleep(sleepMs)
       sleepMs += 100
     }
 

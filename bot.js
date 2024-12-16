@@ -32,7 +32,7 @@ const tokenTimerMap = new Map()
 const main = async () => {
 
   // UniswapV2 new pair listener
-  uniswapV2.factory.on('PairCreated', (token0, token1, pair, index) => eventHandler(RouterV.V2, token0, token1, pair, 0))
+  // uniswapV2.factory.on('PairCreated', (token0, token1, pair, index) => eventHandler(RouterV.V2, token0, token1, pair, 0))
 
   // UniswapV3 new pool listener
   uniswapV3.factory.on('PoolCreated', (token0, token1, fee, tickSpacing, pool) => eventHandler(RouterV.V3, token0, token1, pool, fee))
@@ -44,10 +44,10 @@ const eventHandler = async (_routerV, _token0, _token1, _pool, _fee) => {
 
   console.log(chalk.blue(`Pool V${_routerV + 2} created with ${_token0} & ${_token1} at ${_pool} \n`))
 
-  if (tokenMap.size > QUEUE_SIZE) {
-    console.log(chalk.bgRed("Token queue reached limit...\n"))
-    return
-  }
+  // if (tokenMap.size > QUEUE_SIZE) {
+  //   console.log(chalk.bgRed("Token queue reached limit...\n"))
+  //   return
+  // }
 
   let tokenWeth, tokenNew
 
@@ -62,25 +62,7 @@ const eventHandler = async (_routerV, _token0, _token1, _pool, _fee) => {
     return
   }
 
-  const securityData = await fetchSecurityInfo(tokenNew)
-  const tokenKey = tokenNew.toLowerCase()
-  const securityInfo = securityData[tokenKey] 
-
-  if (securityData && securityInfo) {
-    console.log("Check Security info...")
-    const tokenIsSecure = checkSecurity(securityInfo)
-
-    if (tokenIsSecure) {
-      const holders = await checkLpHolders(securityInfo, tokenNew)
-      const amount = ethers.parseEther(WETH_AMOUNT)
-      console.log(`LP holders: ${holders} \n`)
-
-      watchPoolSwaps(_routerV, _pool, _fee, tokenWeth, tokenNew)
-
-    } else {
-      console.log(chalk.redBright(`Token is not secure: ${tokenNew}\n`))
-    }
-  }
+  watchPoolSwaps(_routerV, _pool, _fee, tokenWeth, tokenNew)
 
   console.log("Waiting for new pools...\n")
 }
@@ -135,6 +117,24 @@ async function sellToken(_routerV, _tokenIn, _tokenOut, _fee) {
   return false
 }
 
+const checkTokenSecurity = async (_routerV, _tokenIn, _tokenOut, _fee) => {
+  const securityData = await fetchSecurityInfo(_tokenOut.address)
+  const tokenKey = _tokenOut.address.toLowerCase()
+  const securityInfo = securityData[tokenKey] 
+
+  if (securityData && securityInfo) {
+    console.log("Check Security info...")
+    const tokenIsSecure = checkSecurity(securityInfo)
+
+    if (tokenIsSecure) {
+      console.log(chalk.green(`Try to buy ${_tokenOut.symbol} `))
+      const amount = ethers.parseEther(WETH_AMOUNT)
+      await buyToken(_routerV, _tokenIn.address, _tokenOut.address, amount, _fee)
+    } else {
+      console.log(chalk.redBright(`Token is not secure: ${_tokenOut.address}\n`))
+    }
+  }
+}
 
 const watchPoolSwaps = async (_routerV, _poolAddress, _fee, _tokenIn, _tokenOut) => {
   const { tokenIn, tokenOut } = await getTokenAndContract(_tokenIn, _tokenOut, provider)
@@ -144,7 +144,6 @@ const watchPoolSwaps = async (_routerV, _poolAddress, _fee, _tokenIn, _tokenOut)
   console.log(chalk.blue(`Using ${tokenIn.symbol}/${tokenOut.symbol}\n`))
 
   tokenMap.set(_tokenOut, 1)
-  tokenTimerMap.set(_tokenOut, moment().add(3, 'minutes'))
 
   pool.contract.on('Swap', () => poolSwapsHandler(_routerV, pool, tokenIn, tokenOut))
 }
@@ -158,26 +157,37 @@ const poolSwapsHandler = async (_routerV, _pool, _tokenIn, _tokenOut) => {
   const swapCount = tokenMap.get(_tokenOut.address)
   console.log(`${swapCount}. Swap event: ${_tokenIn.symbol}/${_tokenOut.symbol}`)
 
-  const expireIn = tokenTimerMap.get(_tokenOut.address)
-  if (moment().isAfter(expireIn)) {
-    console.log(chalk.redBright(`Token ${_tokenOut.symbol} expired`))
-    tokenMap.delete(_tokenOut.address)
-    tokenTimerMap.delete(_tokenOut.address)
+  // waiting max 10 seconds between swaps
+  let swapDelaySec = 10
 
-    return
-  }
+  switch (swapCount) {
+    case 1:
+      tokenMap.set(_tokenOut.address, swapCount + 1)
+      tokenTimerMap.set(_tokenOut.address, moment().add(swapDelaySec, 'seconds'))
+      break;
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+      const expireIn = tokenTimerMap.get(_tokenOut.address)
+      if (moment().isAfter(expireIn)) {
+        let diff = moment().diff(expireIn, 'seconds') 
+        console.log(chalk.redBright(`Token ${_tokenOut.symbol} expired by ${diff} seconds`))
 
-  if (swapCount > 5) {
+        tokenMap.delete(_tokenOut.address)
+        tokenTimerMap.delete(_tokenOut.address)
+        // _pool.contract.removeAllListeners()
+      } else {
+        tokenMap.set(_tokenOut.address, swapCount + 1)
+        tokenTimerMap.set(_tokenOut.address, moment().add(swapDelaySec, 'seconds'))
+      }
 
-    tokenMap.delete(_tokenOut.address)
-    tokenTimerMap.delete(_tokenOut.address)
-
-    console.log(chalk.green(`Try to buy ${_tokenOut.symbol} `))
-
-    const amount = ethers.parseEther(WETH_AMOUNT)
-    await buyToken(_routerV, _tokenIn.address, _tokenOut.address, amount, _pool.fee)
-  } else {
-    tokenMap.set(_tokenOut.address, swapCount + 1)
+      break;
+    default:
+      tokenMap.delete(_tokenOut.address)
+      tokenTimerMap.delete(_tokenOut.address)
+      await checkTokenSecurity(_routerV, _tokenIn, _tokenOut, _pool.fee)
+      // _pool.contract.removeAllListeners()
   }
 }
 
