@@ -18,6 +18,7 @@ const SNIPER_TRADE_ADDRESS = config.PROJECT_SETTINGS.SNIPER_TRADE_ADDRESS
 const PRICE_UPPER_LIMIT = config.PROJECT_SETTINGS.PRICE_UPPER_LIMIT
 const PRICE_LOWER_LIMIT = config.PROJECT_SETTINGS.PRICE_LOWER_LIMIT
 const WETH_AMOUNT = config.PROJECT_SETTINGS.WETH_AMOUNT
+const WETH_AMOUNT_HALF = config.PROJECT_SETTINGS.WETH_AMOUNT_HALF
 const QUEUE_SIZE = config.PROJECT_SETTINGS.QUEUE_SIZE
 const FUNDINGS = Object.values(config.FUNDINGS)
 
@@ -36,8 +37,6 @@ const main = async () => {
 
   // UniswapV3 new pool listener
   uniswapV3.factory.on('PoolCreated', (token0, token1, fee, tickSpacing, pool) => eventHandler(RouterV.V3, token0, token1, pool, fee))
-
-  console.log("Waiting for new pools...\n")
 }
 
 const eventHandler = async (_routerV, _token0, _token1, _pool, _fee) => {
@@ -58,13 +57,10 @@ const eventHandler = async (_routerV, _token0, _token1, _pool, _fee) => {
     tokenWeth = _token1
     tokenNew = _token0
   } else {
-    console.log("Waiting for new pools...\n")
     return
   }
 
   watchPoolSwaps(_routerV, _pool, _fee, tokenWeth, tokenNew)
-
-  console.log("Waiting for new pools...\n")
 }
 
 /**
@@ -75,12 +71,15 @@ const eventHandler = async (_routerV, _token0, _token1, _pool, _fee) => {
  * @param _tokenOut will be bought
  * @param _amount 0 means we will sold all the balance of _tokenIn, otherwise a specific amount will be sold
  * @param _fee trading fee
+ * @param _retry index of buy recalls if error occured
  */
-async function buyToken(_routerV, _tokenIn, _tokenOut, _amount, _fee) {
+async function buyToken(_routerV, _tokenIn, _tokenOut, _amount, _fee, _retry) {
   if (!config.PROJECT_SETTINGS.isDeployed) {
     console.log(chalk.red(`Contract is not deployed... \n`))
     return
   }
+
+  console.log(chalk.green(`${_retry + 1}. Attempt...`))
 
   try {
     const transaction = await sniperTrade.connect(signer).buyToken(
@@ -90,14 +89,16 @@ async function buyToken(_routerV, _tokenIn, _tokenOut, _amount, _fee) {
       _tokenOut,
       _fee
     )
-    await transaction.wait(0)
-    console.log(chalk.green(`Buy Complete... \n`))
-  } catch (error) {
-    console.log(chalk.red(`Error on buy token: ${error} \n`))
-  } finally {
+    await transaction.wait()
+
     console.log(chalk.yellow("---------------------------------------------------------"))
     console.log(chalk.yellow(`Sell token on V${_routerV + 2}, address: ${_tokenOut}`))
     console.log(chalk.yellow("---------------------------------------------------------\n"))
+  } catch (error) {
+    console.log(chalk.red(`Error on buy token: ${error} \n`))
+    if (_retry < 3) {
+      await buyToken(_routerV, _tokenIn, _tokenOut, _amount, _fee, _retry + 1)
+    }
   }
 }
 
@@ -109,7 +110,7 @@ async function sellToken(_routerV, _tokenIn, _tokenOut, _fee) {
       _tokenOut,
       _fee
     )
-    await transaction.wait(0)
+    await transaction.wait()
 
     console.log(chalk.green(`Sell Complete... \n`))
     return true
@@ -129,10 +130,15 @@ const checkTokenSecurity = async (_routerV, _tokenIn, _tokenOut, _fee) => {
     if (tokenIsSecure) {
       console.log(chalk.green(`Try to buy ${_tokenOut.symbol} `))
       const amount = ethers.parseEther(WETH_AMOUNT)
-      await buyToken(_routerV, _tokenIn.address, _tokenOut.address, amount, _fee)
+      await buyToken(_routerV, _tokenIn.address, _tokenOut.address, amount, _fee, 0)
     } else {
       console.log(chalk.redBright(`Token is not secure: ${_tokenOut.address}\n`))
     }
+  } else if (_routerV === RouterV.V3) {
+    // without security check buy half amount
+    console.log(chalk.bgGreen(`Try to buy without security check ${_tokenOut.symbol} `))
+    const amount = ethers.parseEther(WETH_AMOUNT_HALF)
+    await buyToken(_routerV, _tokenIn.address, _tokenOut.address, amount, _fee, 0)
   }
 }
 
@@ -159,6 +165,7 @@ const poolSwapsHandler = async (_routerV, _pool, _tokenIn, _tokenOut) => {
 
   // waiting max 10 seconds between swaps
   let swapDelaySec = 10
+  const expireIn = tokenTimerMap.get(_tokenOut.address)
 
   switch (swapCount) {
     case 1:
@@ -169,14 +176,14 @@ const poolSwapsHandler = async (_routerV, _pool, _tokenIn, _tokenOut) => {
     case 3:
     case 4:
     case 5:
-      const expireIn = tokenTimerMap.get(_tokenOut.address)
+    case 6:
       if (moment().isAfter(expireIn)) {
         let diff = moment().diff(expireIn, 'seconds') 
         console.log(chalk.redBright(`Token ${_tokenOut.symbol} expired by ${diff} seconds`))
 
         tokenMap.delete(_tokenOut.address)
         tokenTimerMap.delete(_tokenOut.address)
-        // _pool.contract.removeAllListeners()
+        _pool.contract.removeAllListeners()
       } else {
         tokenMap.set(_tokenOut.address, swapCount + 1)
         tokenTimerMap.set(_tokenOut.address, moment().add(swapDelaySec, 'seconds'))
@@ -186,108 +193,11 @@ const poolSwapsHandler = async (_routerV, _pool, _tokenIn, _tokenOut) => {
     default:
       tokenMap.delete(_tokenOut.address)
       tokenTimerMap.delete(_tokenOut.address)
-      await checkTokenSecurity(_routerV, _tokenIn, _tokenOut, _pool.fee)
-      // _pool.contract.removeAllListeners()
+      if (moment().isBefore(expireIn)) {
+        await checkTokenSecurity(_routerV, _tokenIn, _tokenOut, _pool.fee)
+      }
+      _pool.contract.removeAllListeners()
   }
 }
 
 main()
-
-/*
-
-const watchPoolPrice = async (_poolAddress, _fee, _tokenIn, _tokenOut) => {
-  const { tokenIn, tokenOut } = await getTokenAndContract(_tokenIn, _tokenOut, provider)
-
-  const pool = await getPoolContract(_poolAddress, _fee, provider)
-  console.log(chalk.blue(`UniswapV3 Pool Address: ${await pool.contract.getAddress()}`))
-  console.log(chalk.blue(`Using ${tokenIn.symbol}/${tokenOut.symbol}\n`))
-
-  const price0 = await calculatePrice(pool.contract, tokenIn, tokenOut)
-  console.log(`Calculated price: ${price0} \n`)
-
-  pool.contract.on('Swap', () => poolPriceHandler(pool, tokenIn, tokenOut, price0))
-}
-
-const poolPriceHandler = async (_pool, _tokenIn, _tokenOut, _price0) => {
-
-  if (!tokenMap.has(_tokenOut.address)) {
-     return 
-  }
-
-  const newPrice = await calculatePrice(_pool.contract, _tokenIn, _tokenOut)
-  const newFPrice = Number(newPrice)
-  const oldFPrice = Number(_price0)
-  const priceRatio = newFPrice / oldFPrice
-
-  console.log(`Swap event: ${_tokenIn.symbol}/${_tokenOut.symbol}`)
-  console.log(`New price ratio: ${priceRatio} \n`)
-  
-  // Sell _tokenOut if price reached it's target amount
-  if (priceRatio >= PRICE_UPPER_LIMIT) {
-    console.log(chalk.blue(`Bougth ${_tokenOut.symbol} at price: ${oldFPrice}`))
-    console.log(chalk.blue(`Sell ${_tokenOut.symbol} at price: ${newFPrice}`))
-
-    // Fetch token balances before
-    const tokenBalanceBefore = await _tokenIn.contract.balanceOf(SNIPER_TRADE_ADDRESS)
-    let checkToken = ""
-
-    if (FUNDINGS.includes(_tokenIn.address)) {
-      try {
-        console.log(chalk.green(`Try to sell ${_tokenOut.symbol} `))
-        const success = await sellToken(RouterV.V3, _tokenOut.address, _tokenIn.address, _pool.fee)
-        // TODO: remove listener after tokenOut is sold
-      } catch (error) {
-        checkToken = _tokenOut.address
-        console.log(chalk.red(`Error on sell token: ${error} \n`))
-
-        console.log(chalk.yellow("---------------------------------------------------------"))
-        console.log(chalk.yellow(`Sell manually ${_tokenOut.symbol}, address: ${_tokenOut.address}`))
-        console.log(chalk.yellow("---------------------------------------------------------\n"))
-      }
-
-      if (tokenMap.delete(_tokenOut.address)) {
-        console.log(`Token removed from watch list ${_tokenOut.symbol} \n`)
-      }
-    }
-
-    // Fetch token balances after
-    const tokenBalanceAfter = await _tokenIn.contract.balanceOf(SNIPER_TRADE_ADDRESS)
-    const tokenBalanceDifference = tokenBalanceAfter - tokenBalanceBefore
-
-    const data = {
-      'WETH Balance BEFORE': ethers.formatUnits(tokenBalanceBefore, _tokenIn.decimals),
-      'WETH Balance AFTER': ethers.formatUnits(tokenBalanceAfter, _tokenIn.decimals),
-      'WETH Gained/Lost': ethers.formatUnits(tokenBalanceDifference.toString(), _tokenIn.decimals),
-      '-': {},
-      'Check token address': checkToken
-    }
-
-    console.table(data)
-  }
-}
-  */
-
-// Fetch latest pool data from DexScreener
-/*
-async function fetchLatestPools(_from, _to) {
-  const chain = 'ether';
-  const url = `https://public-api.dextools.io/trial/v2/pool/${chain}`;
-
-  // Define the query parameters
-  const params = {
-      sort: 'creationTime',
-      order: 'asc',
-      from: _from,
-      to: _to
-  };
-  
-  axios.get(url, { params })
-    .then(response => {
-      console.log('Pool Information:', response.data);
-      return response;
-    })
-    .catch(error => {
-      console.error('Error fetching pool information:', error);
-    });
-}
-    */

@@ -10,7 +10,7 @@ const tokenSecurity = async (token0) => {
     let chainId = "8453";
 
     // It will only return 1 result for the 1st token address if not called getAccessToken before
-    let res = await GoPlus.tokenSecurity(chainId, [token0], 30);
+    let res = await GoPlus.tokenSecurity(chainId, [token0], 5);
     if (res.code != ErrorCode.SUCCESS) {
         console.error(res.message);
         return {result: {}}
@@ -23,7 +23,7 @@ const fetchSecurityInfo = async (token) => {
     console.log(chalk.magenta(`Fetch Security info: ${token}`))
     let securityData = {result: {}}
     let sleepMs = 0
-    while (Object.keys(securityData.result).length === 0 && sleepMs < 400) {
+    while (Object.keys(securityData.result).length === 0 && sleepMs < 300) {
       securityData = await tokenSecurity(token)
   
       await sleep(sleepMs)
