@@ -18,7 +18,7 @@ const SNIPER_TRADE_ADDRESS = config.PROJECT_SETTINGS.SNIPER_TRADE_ADDRESS
 const PRICE_UPPER_LIMIT = config.PROJECT_SETTINGS.PRICE_UPPER_LIMIT
 const PRICE_LOWER_LIMIT = config.PROJECT_SETTINGS.PRICE_LOWER_LIMIT
 const WETH_AMOUNT = config.PROJECT_SETTINGS.WETH_AMOUNT
-const WETH_AMOUNT_HALF = config.PROJECT_SETTINGS.WETH_AMOUNT_HALF
+const WETH_AMOUNT_NO_CHECK = config.PROJECT_SETTINGS.WETH_AMOUNT_NO_CHECK
 const QUEUE_SIZE = config.PROJECT_SETTINGS.QUEUE_SIZE
 const FUNDINGS = Object.values(config.FUNDINGS)
 
@@ -27,8 +27,25 @@ const RouterV = {
   V3: 1
 }
 
-const tokenMap = new Map()
-const tokenTimerMap = new Map()
+class Swap {
+  constructor(count, frequency, expireIn) {
+      this.count = count;
+      this.frequency = frequency;
+      this.expireIn = expireIn;
+  }
+
+  checkExpiration() {
+    this.frequency = moment().isAfter(this.expireIn) ? 0 : this.frequency + 1
+    this.count += 1
+    this.expireIn = moment().add(Swap.frequencyExpiration, 'seconds')
+  }
+
+  static countLimit = 15
+  static frequencyLimit = 5
+  static frequencyExpiration = 9
+}
+
+const tokenSwapMap = new Map()
 
 const main = async () => {
 
@@ -43,7 +60,7 @@ const eventHandler = async (_routerV, _token0, _token1, _pool, _fee) => {
 
   console.log(chalk.blue(`Pool V${_routerV + 2} created with ${_token0} & ${_token1} at ${_pool} \n`))
 
-  // if (tokenMap.size > QUEUE_SIZE) {
+  // if (tokenSwapMap.size > QUEUE_SIZE) {
   //   console.log(chalk.bgRed("Token queue reached limit...\n"))
   //   return
   // }
@@ -137,7 +154,7 @@ const checkTokenSecurity = async (_routerV, _tokenIn, _tokenOut, _fee) => {
   } else if (_routerV === RouterV.V3) {
     // without security check buy half amount
     console.log(chalk.bgGreen(`Try to buy without security check ${_tokenOut.symbol} `))
-    const amount = ethers.parseEther(WETH_AMOUNT_HALF)
+    const amount = ethers.parseEther(WETH_AMOUNT_NO_CHECK)
     await buyToken(_routerV, _tokenIn.address, _tokenOut.address, amount, _fee, 0)
   }
 }
@@ -149,54 +166,40 @@ const watchPoolSwaps = async (_routerV, _poolAddress, _fee, _tokenIn, _tokenOut)
   console.log(chalk.blue(`UniswapV${_routerV + 2} Pool Address: ${await pool.contract.getAddress()}`))
   console.log(chalk.blue(`Using ${tokenIn.symbol}/${tokenOut.symbol}\n`))
 
-  tokenMap.set(_tokenOut, 1)
+  let swap = new Swap(0, 0, moment().add(5, 'hours'))
+  tokenSwapMap.set(_tokenOut, swap)
 
   pool.contract.on('Swap', () => poolSwapsHandler(_routerV, pool, tokenIn, tokenOut))
 }
 
 const poolSwapsHandler = async (_routerV, _pool, _tokenIn, _tokenOut) => {
 
-  if (!tokenMap.has(_tokenOut.address)) {
+  if (!tokenSwapMap.has(_tokenOut.address)) {
     return 
   }
 
-  const swapCount = tokenMap.get(_tokenOut.address)
-  console.log(`${swapCount}. Swap event: ${_tokenIn.symbol}/${_tokenOut.symbol}`)
+  let swap = tokenSwapMap.get(_tokenOut.address)
+  const diff = moment().diff(swap.expireIn, 'seconds')
+  console.log(`${swap.count + 1}. Swap event: ${_tokenIn.symbol}/${_tokenOut.symbol}`)
 
-  // waiting max 10 seconds between swaps
-  let swapDelaySec = 10
-  const expireIn = tokenTimerMap.get(_tokenOut.address)
+  swap.checkExpiration()
 
-  switch (swapCount) {
-    case 1:
-      tokenMap.set(_tokenOut.address, swapCount + 1)
-      tokenTimerMap.set(_tokenOut.address, moment().add(swapDelaySec, 'seconds'))
-      break;
-    case 2:
-    case 3:
-    case 4:
-    case 5:
-    case 6:
-      if (moment().isAfter(expireIn)) {
-        let diff = moment().diff(expireIn, 'seconds') 
-        console.log(chalk.redBright(`Token ${_tokenOut.symbol} expired by ${diff} seconds`))
-
-        tokenMap.delete(_tokenOut.address)
-        tokenTimerMap.delete(_tokenOut.address)
-        _pool.contract.removeAllListeners()
-      } else {
-        tokenMap.set(_tokenOut.address, swapCount + 1)
-        tokenTimerMap.set(_tokenOut.address, moment().add(swapDelaySec, 'seconds'))
-      }
-
-      break;
-    default:
-      tokenMap.delete(_tokenOut.address)
-      tokenTimerMap.delete(_tokenOut.address)
-      if (moment().isBefore(expireIn)) {
-        await checkTokenSecurity(_routerV, _tokenIn, _tokenOut, _pool.fee)
-      }
-      _pool.contract.removeAllListeners()
+  if (swap.frequency === 0) {
+    console.log(chalk.redBright(`Token ${_tokenOut.symbol} buy frequency stopped by ${diff} seconds`))
+  }
+  
+  if (swap.frequency > Swap.frequencyLimit) {
+    // Try to buy token, we reached the desired swap frequency
+    tokenSwapMap.delete(_tokenOut.address)
+    await checkTokenSecurity(_routerV, _tokenIn, _tokenOut, _pool.fee)
+    _pool.contract.removeAllListeners()
+  } else if (swap.count > Swap.countLimit) {
+    // Swap count reached limit, stop event listening
+    tokenSwapMap.delete(_tokenOut.address)
+    _pool.contract.removeAllListeners()
+  } else {
+    // Countinue listening swap events
+    tokenSwapMap.set(_tokenOut.address, swap)
   }
 }
 

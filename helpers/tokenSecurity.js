@@ -10,7 +10,7 @@ const tokenSecurity = async (token0) => {
     let chainId = "8453";
 
     // It will only return 1 result for the 1st token address if not called getAccessToken before
-    let res = await GoPlus.tokenSecurity(chainId, [token0], 5);
+    let res = await GoPlus.tokenSecurity(chainId, [token0], 8);
     if (res.code != ErrorCode.SUCCESS) {
         console.error(res.message);
         return {result: {}}
