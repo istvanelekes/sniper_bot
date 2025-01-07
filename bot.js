@@ -89,11 +89,7 @@ const eventHandler = async (_routerV, _token0, _token1, _pool, _fee) => {
         console.log(chalk.red(`Error on buy token: ${error} \n`))
       } finally {
         tokenMap.set(tokenNew, amount)
-        // watchPoolPrice(_pool, _fee, tokenWeth, tokenNew)
-
-        console.log(chalk.yellow("---------------------------------------------------------"))
-        console.log(chalk.yellow(`Sell token manually, address: ${tokenNew}`))
-        console.log(chalk.yellow("---------------------------------------------------------\n"))
+        watchPoolPrice(_pool, _fee, tokenWeth, tokenNew)
       }
     } else {
       console.log(chalk.redBright(`Token is not secure: ${tokenNew}\n`))
