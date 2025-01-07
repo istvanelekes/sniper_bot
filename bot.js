@@ -40,8 +40,8 @@ class Swap {
     this.expireIn = moment().add(Swap.frequencyExpiration, 'seconds')
   }
 
-  static countLimit = 15
-  static frequencyLimit = 5
+  static countLimit = 16
+  static frequencyLimit = 6
   static frequencyExpiration = 9
 }
 
