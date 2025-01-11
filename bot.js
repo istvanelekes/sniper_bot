@@ -2,12 +2,11 @@ require("dotenv").config()
 require('./helpers/server')
 
 const chalk = require("chalk")
-const axios = require('axios');
 const ethers = require("ethers");
 
 const { getTokenAndContract, getPoolContract, calculatePrice } = require('./helpers/helpers')
 const { provider, signer, uniswapV2, uniswapV3, sniperTrade } = require('./helpers/initialization')
-const { fetchSecurityInfo, checkSecurity, checkLpHolders, sleep } = require('./helpers/tokenSecurity')
+const { fetchSecurityInfo, checkSecurity, checkLpHolders } = require('./helpers/tokenSecurity')
 
 // Use this functions for testing
 const { loadAllPools, loadAllSwaps } = require('./helpers/testing')
@@ -77,9 +76,7 @@ const eventHandler = async (_routerV, _token0, _token1, _pool, _fee) => {
     const tokenIsSecure = checkSecurity(securityInfo)
 
     if (tokenIsSecure) {
-      const holders = await checkLpHolders(securityInfo, tokenNew)
       const amount = ethers.parseEther(WETH_AMOUNT)
-      console.log(`LP holders: ${holders} \n`)
 
       console.log(chalk.green(`Try to buy token: ${tokenNew} on Uniswap_V${_routerV + 2}, fee: ${_fee}`))
 

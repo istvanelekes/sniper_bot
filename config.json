@@ -6,7 +6,7 @@
         "PRICE_UNITS": 0,
         "PRICE_UPPER_LIMIT": 1.5,
         "PRICE_LOWER_LIMIT": 0.7,
-        "WETH_AMOUNT": "0.00005",
+        "WETH_AMOUNT": "0.00001",
         "QUEUE_SIZE": 10
     },
     "FUNDINGS": {
