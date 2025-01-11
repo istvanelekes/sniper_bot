@@ -87,10 +87,10 @@ const eventHandler = async (_routerV, _token0, _token1, _pool, _fee) => {
  * @param _tokenIn will be sold
  * @param _tokenOut will be bought
  * @param _amount 0 means we will sold all the balance of _tokenIn, otherwise a specific amount will be sold
- * @param _fee trading fee
+ * @param _pool pool object ex. address, fee
  * @param _retry index of buy recalls if error occured
  */
-async function buyToken(_routerV, _tokenIn, _tokenOut, _amount, _fee, _retry) {
+async function buyToken(_routerV, _tokenIn, _tokenOut, _amount, _pool, _retry) {
   if (!config.PROJECT_SETTINGS.isDeployed) {
     console.log(chalk.red(`Contract is not deployed... \n`))
     return
@@ -104,17 +104,18 @@ async function buyToken(_routerV, _tokenIn, _tokenOut, _amount, _fee, _retry) {
       _tokenIn,
       _amount,
       _tokenOut,
-      _fee
+      _pool.fee
     )
     await transaction.wait()
 
     console.log(chalk.yellow("---------------------------------------------------------"))
     console.log(chalk.yellow(`Sell token on V${_routerV + 2}, address: ${_tokenOut}`))
+    console.log(chalk.yellow(`Pool address: ${_pool.address}`))
     console.log(chalk.yellow("---------------------------------------------------------\n"))
   } catch (error) {
     console.log(chalk.red(`Error on buy token: ${error} \n`))
     if (_retry < 3) {
-      await buyToken(_routerV, _tokenIn, _tokenOut, _amount, _fee, _retry + 1)
+      await buyToken(_routerV, _tokenIn, _tokenOut, _amount, _pool, _retry + 1)
     }
   }
 }
@@ -135,7 +136,7 @@ async function sellToken(_routerV, _tokenIn, _tokenOut, _fee) {
   return false
 }
 
-const checkTokenSecurity = async (_routerV, _tokenIn, _tokenOut, _fee) => {
+const checkTokenSecurity = async (_routerV, _tokenIn, _tokenOut, _pool) => {
   const securityData = await fetchSecurityInfo(_tokenOut.address)
   const tokenKey = _tokenOut.address.toLowerCase()
   const securityInfo = securityData[tokenKey] 
@@ -147,7 +148,7 @@ const checkTokenSecurity = async (_routerV, _tokenIn, _tokenOut, _fee) => {
     if (tokenIsSecure) {
       console.log(chalk.green(`Try to buy ${_tokenOut.symbol} `))
       const amount = ethers.parseEther(WETH_AMOUNT)
-      await buyToken(_routerV, _tokenIn.address, _tokenOut.address, amount, _fee, 0)
+      await buyToken(_routerV, _tokenIn.address, _tokenOut.address, amount, _pool, 0)
     } else {
       console.log(chalk.redBright(`Token is not secure: ${_tokenOut.address}\n`))
     }
@@ -155,7 +156,7 @@ const checkTokenSecurity = async (_routerV, _tokenIn, _tokenOut, _fee) => {
     // without security check buy half amount
     console.log(chalk.bgGreen(`Try to buy without security check ${_tokenOut.symbol} `))
     const amount = ethers.parseEther(WETH_AMOUNT_NO_CHECK)
-    await buyToken(_routerV, _tokenIn.address, _tokenOut.address, amount, _fee, 0)
+    await buyToken(_routerV, _tokenIn.address, _tokenOut.address, amount, _pool, 0)
   }
 }
 
@@ -191,7 +192,7 @@ const poolSwapsHandler = async (_routerV, _pool, _tokenIn, _tokenOut) => {
   if (swap.frequency > Swap.frequencyLimit) {
     // Try to buy token, we reached the desired swap frequency
     tokenSwapMap.delete(_tokenOut.address)
-    await checkTokenSecurity(_routerV, _tokenIn, _tokenOut, _pool.fee)
+    await checkTokenSecurity(_routerV, _tokenIn, _tokenOut, _pool)
     _pool.contract.removeAllListeners()
   } else if (swap.count > Swap.countLimit) {
     // Swap count reached limit, stop event listening
