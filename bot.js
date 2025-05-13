@@ -42,7 +42,7 @@ class Swap {
 
   static countLimit = 16
   static frequencyLimit = 6
-  static frequencyExpiration = 9
+  static frequencyExpiration = 8
 }
 
 const tokenSwapMap = new Map()
